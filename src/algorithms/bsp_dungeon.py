@@ -1,7 +1,6 @@
 """BSP генератор подземелья.
 
-Разбиение работает. Теперь добавил комнаты в листьях.
-Коридоров пока нет.
+Комнаты переносятся на grid. Коридоров пока нет.
 """
 
 import random
@@ -70,3 +69,24 @@ def fill_rooms(node, rng):
         return
     fill_rooms(node.left, rng)
     fill_rooms(node.right, rng)
+
+
+from src.core.constants import TileType
+
+
+def _safe_carve(grid, x, y):
+    if 0 <= y < len(grid) and 0 <= x < len(grid[0]):
+        grid[y][x] = TileType.FLOOR
+
+
+def carve_rooms_to_grid(node, grid):
+    if node.is_leaf():
+        if node.room is None:
+            return
+        rx, ry, rw, rh = node.room
+        for y in range(ry, ry + rh):
+            for x in range(rx, rx + rw):
+                _safe_carve(grid, x, y)
+        return
+    carve_rooms_to_grid(node.left, grid)
+    carve_rooms_to_grid(node.right, grid)
