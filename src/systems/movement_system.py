@@ -1,5 +1,8 @@
 class MovementSystem:
-    """Двигает игрока и врагов на одну клетку. Без поиска пути."""
+    """Двигает игрока на одну клетку по команде из InputManager.
+
+    Враги двигаются через AISystem — отдельная логика.
+    """
 
     def try_move_player(self, player, dx, dy, level):
         new_tx = player.tx + dx
@@ -9,8 +12,20 @@ class MovementSystem:
             return True
         return False
 
+    def step_enemy_towards(self, enemy, target_tx, target_ty, level):
+        # делаем один шаг по path[0] если есть, или к target напрямую
+        path = enemy.path
+        if path:
+            next_step = path[0]
+            if level.is_walkable(*next_step):
+                enemy.set_position(*next_step)
+                enemy.set_path(path[1:])
+                return True
+        return False
+
     def step_enemy_to_waypoint(self, enemy, level):
         wp = enemy.current_waypoint()
+        # тупой шаг к точке — без поиска пути
         dx = 0
         dy = 0
         if enemy.tx < wp[0]:
