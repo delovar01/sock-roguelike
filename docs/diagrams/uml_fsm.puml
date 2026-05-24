@@ -1,0 +1,23 @@
+@startuml
+[*] --> PATROL
+
+PATROL --> CHASE : расстояние <= 5 тайлов
+CHASE --> RETURN : расстояние > 8 тайлов
+RETURN --> PATROL : дошёл до waypoint
+
+PATROL : ходит по двум waypoints
+CHASE : идёт по пути от A*
+RETURN : возвращается на маршрут
+
+note right of CHASE
+  A* вызывается раз в 0.25с
+  и только в этом состоянии
+end note
+
+note right of PATROL
+  гистерезис: разница
+  между радиусом обнаружения (5)
+  и потери (8) — чтобы враг
+  не дёргался между состояниями
+end note
+@enduml

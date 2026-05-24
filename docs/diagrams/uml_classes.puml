@@ -1,0 +1,100 @@
+@startuml
+skinparam classAttributeIconSize 0
+hide circle
+
+abstract class Entity {
+    + position
+    + alive
+    + update(dt, world)
+    + draw(surface, camera)
+    + set_position(tx, ty)
+}
+
+class Player {
+    - _hp: int
+    - _buttons: int
+    + hp (property)
+    + take_damage(amount)
+    + heal(amount)
+    + is_dead()
+}
+
+class Enemy {
+    - _state: EnemyState
+    - _path: list
+    - _waypoints: list
+    + state (property)
+    + update_fsm(player_tx, player_ty)
+    + set_path(path)
+}
+
+class Item {
+    + update(dt, world)
+}
+
+abstract class BaseScene {
+    + handle_event(event)
+    + update(dt)
+    + draw(surface)
+}
+
+class MenuScene
+class GameScene
+class DeathScene
+class WinScene
+
+class Game {
+    + run()
+    + change_scene(id, **kwargs)
+    + quit()
+    + screen
+    + input_manager
+    + event_bus
+    + resources
+}
+
+class Level {
+    + grid
+    + spawn
+    + exit
+    + is_walkable(tx, ty)
+    + get_tile(tx, ty)
+    + draw(surface, camera)
+}
+
+class Camera {
+    + offset_x
+    + offset_y
+    + follow(target_tx, target_ty)
+}
+
+class EventBus {
+    + subscribe(event, callback)
+    + emit(event, **payload)
+}
+
+class MovementSystem
+class CollisionSystem
+class AISystem
+class RenderSystem
+
+Entity <|-- Player
+Entity <|-- Enemy
+Entity <|-- Item
+BaseScene <|-- MenuScene
+BaseScene <|-- GameScene
+BaseScene <|-- DeathScene
+BaseScene <|-- WinScene
+
+Game *-- BaseScene
+Game *-- EventBus
+GameScene *-- Level
+GameScene *-- Camera
+GameScene *-- Player
+GameScene o-- Enemy
+GameScene o-- Item
+GameScene *-- MovementSystem
+GameScene *-- CollisionSystem
+GameScene *-- AISystem
+GameScene *-- RenderSystem
+@enduml

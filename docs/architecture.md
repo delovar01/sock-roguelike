@@ -1,0 +1,96 @@
+# Архитектура
+
+## Общий обзор
+
+Игра построена по MVC-подобному принципу с разделением на системы.
+Формальных классов Model/View/Controller нет, но роли разнесены:
+
+- **Model** — `src/entities/` + `src/world/`. Игрок, враги, предметы,
+  уровень. Хранят состояние, не знают про экран и ввод.
+- **View** — `src/systems/render_system.py` + `src/ui/`. Рисуют
+  состояние модели на экран.
+- **Controller** — `src/core/input_manager.py` + `src/systems/movement_system.py`
+  + `src/systems/ai_system.py` + `src/systems/collision_system.py`.
+  Меняют модель в ответ на ввод или ИИ.
+
+Между системами связь идёт через шину событий
+(`src/core/event_bus.py`, паттерн Observer): Player не знает, что
+HUD и звуковая подсистема его слушают, и наоборот.
+
+## Главный цикл
+
+`Game` (`src/core/game.py`) — корневой объект. Внутри `run()`:
+
+1. читаем `dt` от `clock.tick(FPS)`
+2. обрабатываем события (`QUIT`, нажатия клавиш) — раздаём их активной
+   сцене и `InputManager`
+3. вызываем `scene.update(dt)` — там вся игровая логика
+4. чистим экран, вызываем `scene.draw(surface)`
+5. `pygame.display.flip()` — показываем кадр
+
+Сцена меняется через `Game.change_scene(...)` — реально подменяется
+после текущего тика, чтобы не сломать обход.
+
+## Сцены
+
+- `MenuScene` — главное меню, кнопки "Новая игра / Продолжить / Выход",
+  показывает сюжетный текст из `assets/story/intro.txt`.
+- `GameScene` — генерирует уровень через BSP, расставляет врагов и
+  пуговицы, держит игровой цикл.
+- `DeathScene` — экран смерти.
+- `WinScene` — экран победы (после 3-го уровня).
+
+Базовый класс `BaseScene` — это `abc.ABC` с тремя абстрактными
+методами: `handle_event`, `update`, `draw`. Узкий интерфейс
+(принцип Interface Segregation).
+
+## Сущности
+
+Все игровые объекты — наследники `Entity` (`src/entities/entity.py`,
+`abc.ABC`). Хранят позицию в тайлах, не в пикселях, чтобы не зависеть
+от размера тайла.
+
+- `Player` — носок. `_hp` инкапсулирован (одно подчёркивание плюс
+  `@property hp` без сеттера). Изменение HP только через `take_damage()`
+  и `heal()`.
+- `Enemy` — моль. Хранит состояние FSM, маршрут патруля и путь от A*.
+- `Item` — пуговица.
+
+## Системы
+
+Каждая система отвечает только за одно (принцип Single Responsibility):
+
+- `MovementSystem` — двигает игрока и врагов на одну клетку,
+  с проверкой `Level.is_walkable`.
+- `CollisionSystem` — AABB, проверяет пересечения игрока с предметами
+  и врагами. При подборе и при смерти — эмитит события.
+- `AISystem` — обновляет FSM врагов, при состоянии Chase вызывает
+  поисковик пути (зависит от абстракции через параметр конструктора —
+  принцип Dependency Inversion).
+- `RenderSystem` — рисует уровень и сущности, есть debug-режим.
+
+## Соответствие SOLID
+
+| Принцип | Где |
+|---|---|
+| Single Responsibility | системы по одной отвечают за свою задачу |
+| Open/Closed | новый тип врага = подкласс `Enemy`, системы не меняются |
+| Liskov | `MovementSystem` работает с `Player` и `Enemy` одинаково |
+| Interface Segregation | `BaseScene` — три метода, не больше |
+| Dependency Inversion | `AISystem` принимает поисковик пути как параметр |
+
+## Структура папок
+
+```
+src/
+  core/         constants, game, event_bus, input_manager, resource_manager
+  scenes/       base_scene, menu_scene, game_scene, death_scene, win_scene
+  entities/     entity (ABC), player, enemy, item
+  systems/      movement, collision, ai, render
+  algorithms/   bsp_dungeon, a_star
+  world/        tile, level, camera
+  ui/           menu, hud
+  persistence/  save_manager (JSON)
+```
+
+См. также `docs/algorithms.md` про конкретные алгоритмы.
