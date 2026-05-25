@@ -268,6 +268,8 @@ class GameScene(BaseScene):
         all_entities = list(self.items) + list(self.enemies) + [self.player]
         self.render_sys.draw(surface, self.level, all_entities, self.camera)
         self.render_sys.draw_enemy_hp(surface, self.enemies, self.camera)
+        # факел поверх мира, но под HUD и debug
+        self.render_sys.draw_lighting(surface, self.player, self.camera)
         fps = self.game.clock.get_fps()
         self.render_sys.draw_debug(surface, self.enemies, self.camera, fps)
         self.hud.draw(surface, self.player, self.level_num,

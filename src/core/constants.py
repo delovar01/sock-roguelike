@@ -43,6 +43,12 @@ SCORE_NEEDLE = 30
 SCORE_KEY = 20
 SCORE_KILL = 50
 
+# подсветка факелом
+LIGHT_ENABLED = True
+LIGHT_RADIUS = 130          # полностью видно в этом радиусе (пикселях)
+LIGHT_FADE = 40             # ширина мягкой полутени
+LIGHT_DARKNESS = 210        # 0..255, насколько тёмная неосвещённая часть
+
 # уровень и BSP
 LEVELS_COUNT = 3
 BSP_MIN_LEAF_SIZE = 7

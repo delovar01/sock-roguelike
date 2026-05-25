@@ -1,6 +1,9 @@
 import pygame
 
-from src.core.constants import TILE_SIZE, EnemyState
+from src.core.constants import (
+    TILE_SIZE, EnemyState,
+    LIGHT_ENABLED, LIGHT_RADIUS, LIGHT_FADE, LIGHT_DARKNESS,
+)
 
 
 # цвета для отладки врагов по их состоянию
@@ -26,6 +29,31 @@ class RenderSystem:
         for e in entities:
             if e.alive:
                 e.draw(surface, camera)
+
+    def draw_lighting(self, surface, player, camera):
+        """Тёмный слой с дыркой вокруг игрока — эффект факела.
+
+        Идея простая: накладываем поверх экрана полупрозрачную
+        чёрную поверхность и в позиции игрока вырезаем прозрачный круг.
+        Между светом и темнотой делаем мягкое кольцо полутени.
+        """
+        if not LIGHT_ENABLED:
+            return
+        dark = pygame.Surface(surface.get_size(), pygame.SRCALPHA)
+        dark.fill((0, 0, 0, LIGHT_DARKNESS))
+
+        # центр игрока на экране
+        px = player.tx * TILE_SIZE - camera.offset_x + TILE_SIZE // 2
+        py = player.ty * TILE_SIZE - camera.offset_y + TILE_SIZE // 2
+
+        # видимая зона — полностью прозрачная (вычитаем из тёмного слоя)
+        pygame.draw.circle(dark, (0, 0, 0, 0), (px, py), LIGHT_RADIUS)
+        # мягкая полутень кольцом
+        pygame.draw.circle(
+            dark, (0, 0, 0, LIGHT_DARKNESS // 2),
+            (px, py), LIGHT_RADIUS + LIGHT_FADE, width=LIGHT_FADE
+        )
+        surface.blit(dark, (0, 0))
 
     def draw_enemy_hp(self, surface, enemies, camera):
         """Полоска HP над каждым раненым врагом."""
