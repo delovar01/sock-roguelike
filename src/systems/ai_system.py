@@ -1,6 +1,6 @@
 """Логика врагов — обновляем автомат и иногда зовём поиск пути."""
 
-from src.core.constants import EnemyState
+from src.core.constants import PATROL, CHASE, RETURN
 
 
 class AISystem:
@@ -16,10 +16,10 @@ class AISystem:
             enemy.update_fsm(player.tx, player.ty)
 
             # 2. в Chase раз в 0.25с зовём A*
-            if enemy.state == EnemyState.CHASE:
+            if enemy.state == CHASE:
                 if enemy.should_repath(dt):
                     path = self.pathfinder.find_path(
-                        level, enemy.position, player.position
+                        level, (enemy.tx, enemy.ty), (player.tx, player.ty)
                     )
                     enemy.set_path(path)
 
@@ -27,14 +27,13 @@ class AISystem:
             if not enemy.can_step(dt):
                 continue
 
-            # FIXME: если state=Chase, но path пустой (игрок за стеной без обхода),
-            # враг просто стоит. По-хорошему перевести в Return, но пока работает
-            if enemy.state == EnemyState.PATROL:
+            # FIXME: если state=Chase, но path пустой, враг стоит. Не страшно.
+            if enemy.state == PATROL:
                 movement_system.step_enemy_to_waypoint(enemy, level)
-            elif enemy.state == EnemyState.CHASE:
+            elif enemy.state == CHASE:
                 if enemy.path:
                     movement_system.step_enemy_towards(
                         enemy, player.tx, player.ty, level
                     )
-            elif enemy.state == EnemyState.RETURN:
+            elif enemy.state == RETURN:
                 movement_system.step_enemy_to_waypoint(enemy, level)

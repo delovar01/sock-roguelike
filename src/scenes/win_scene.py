@@ -1,7 +1,7 @@
 import pygame
 
 from src.scenes.base_scene import BaseScene
-from src.core.constants import SCREEN_WIDTH, SCREEN_HEIGHT, HUD_COLOR, SceneId
+from src.core.constants import SCREEN_WIDTH, SCREEN_HEIGHT, HUD_COLOR, MENU
 
 
 def _format_time(seconds):
@@ -21,7 +21,7 @@ class WinScene(BaseScene):
     def handle_event(self, event):
         if event.type == pygame.KEYDOWN:
             if event.key in (pygame.K_RETURN, pygame.K_SPACE, pygame.K_ESCAPE):
-                self.game.change_scene(SceneId.MENU)
+                self.game.change_scene(MENU)
 
     def update(self, dt):
         pass

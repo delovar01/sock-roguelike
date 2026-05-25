@@ -1,26 +1,25 @@
 """Генератор подземелья через BSP (Binary Space Partitioning).
 
 Идея: рекурсивно делим прямоугольник пополам, в каждом листе дерева
-делаем комнату, потом соединяем комнаты L-образными коридорами.
-
-Сложность по времени и памяти — O(n), где n = width * height.
+размещаем комнату, потом соединяем комнаты L-образными коридорами.
 """
 
 import random
 
 from src.core.constants import (
-    TileType, BSP_MIN_LEAF_SIZE, BSP_MAX_DEPTH,
-    ROOM_MIN_SIZE, ROOM_PADDING
+    WALL, FLOOR, EXIT,
+    BSP_MIN_LEAF_SIZE, BSP_MAX_DEPTH,
+    ROOM_MIN_SIZE, ROOM_PADDING,
 )
 
 
 # раньше пробовал просто одну большую комнату посреди карты, но это не
 # подземелье а зал. оставил, чтобы не забыть как было плохо
 # def naive_room(w, h):
-#     g = [[TileType.WALL for _ in range(w)] for _ in range(h)]
+#     g = [[WALL for _ in range(w)] for _ in range(h)]
 #     for y in range(2, h-2):
 #         for x in range(2, w-2):
-#             g[y][x] = TileType.FLOOR
+#             g[y][x] = FLOOR
 #     return g
 
 
@@ -34,7 +33,7 @@ class BSPNode:
         self.h = h
         self.left = None
         self.right = None
-        self.room = None  # (rx, ry, rw, rh) только у листа
+        self.room = None
 
     def is_leaf(self):
         return self.left is None and self.right is None
@@ -47,10 +46,8 @@ class BSPNode:
 
 
 def split_node(node, rng, depth):
-    """1. Рекурсивное разбиение узла на две части."""
     if depth >= BSP_MAX_DEPTH:
         return
-    # делим по длинной стороне
     if node.w > node.h:
         split_vertical = True
     elif node.h > node.w:
@@ -77,7 +74,6 @@ def split_node(node, rng, depth):
 
 
 def make_rooms(node, rng):
-    """2. В каждом листе ставим комнату случайного размера."""
     if node.is_leaf():
         # TODO: для уровней 2-3 можно делать комнаты побольше
         max_w = node.w - ROOM_PADDING * 2
@@ -95,21 +91,19 @@ def make_rooms(node, rng):
 
 
 def carve_rooms(node, grid):
-    """Переносим комнаты на сетку как пол."""
     if node.is_leaf():
         if node.room is None:
             return
         rx, ry, rw, rh = node.room
         for y in range(ry, ry + rh):
             for x in range(rx, rx + rw):
-                grid[y][x] = TileType.FLOOR
+                grid[y][x] = FLOOR
         return
     carve_rooms(node.left, grid)
     carve_rooms(node.right, grid)
 
 
 def find_any_center(node):
-    """Берём центр любой комнаты из поддерева (нужно для коридоров)."""
     if node.is_leaf():
         return node.room_center()
     c = find_any_center(node.left)
@@ -119,23 +113,21 @@ def find_any_center(node):
 
 
 def carve_corridor(grid, a, b, rng):
-    """3. L-образный коридор между двумя точками."""
     ax, ay = a
     bx, by = b
     if rng.random() < 0.5:
         for x in range(min(ax, bx), max(ax, bx) + 1):
-            grid[ay][x] = TileType.FLOOR
+            grid[ay][x] = FLOOR
         for y in range(min(ay, by), max(ay, by) + 1):
-            grid[y][bx] = TileType.FLOOR
+            grid[y][bx] = FLOOR
     else:
         for y in range(min(ay, by), max(ay, by) + 1):
-            grid[y][ax] = TileType.FLOOR
+            grid[y][ax] = FLOOR
         for x in range(min(ax, bx), max(ax, bx) + 1):
-            grid[by][x] = TileType.FLOOR
+            grid[by][x] = FLOOR
 
 
 def connect_tree(node, grid, rng):
-    """Снизу вверх соединяем комнаты левого и правого поддерева."""
     if node.is_leaf():
         return
     connect_tree(node.left, grid, rng)
@@ -147,7 +139,6 @@ def connect_tree(node, grid, rng):
 
 
 def collect_rooms(node, out):
-    """Список всех комнат — для расстановки врагов и предметов."""
     if node.is_leaf():
         if node.room is not None:
             out.append(node.room)
@@ -157,9 +148,8 @@ def collect_rooms(node, out):
 
 
 def generate(width, height, seed):
-    """Главная функция. Возвращает grid, spawn, exit_pos, rooms, centers."""
     rng = random.Random(seed)
-    grid = [[TileType.WALL for _ in range(width)] for _ in range(height)]
+    grid = [[WALL for _ in range(width)] for _ in range(height)]
 
     root = BSPNode(0, 0, width, height)
     split_node(root, rng, 0)
@@ -172,15 +162,13 @@ def generate(width, height, seed):
     centers = [(r[0] + r[2] // 2, r[1] + r[3] // 2) for r in rooms]
 
     if not centers:
-        # на всякий пожарный — если по какой-то причине комнат нет
         spawn = (width // 2, height // 2)
         exit_pos = (width // 2 + 1, height // 2)
-        grid[spawn[1]][spawn[0]] = TileType.FLOOR
-        grid[exit_pos[1]][exit_pos[0]] = TileType.EXIT
+        grid[spawn[1]][spawn[0]] = FLOOR
+        grid[exit_pos[1]][exit_pos[0]] = EXIT
         return grid, spawn, exit_pos, rooms, centers
 
     spawn = centers[0]
-    # выход — самая дальняя по манхэттену комната
     exit_pos = spawn
     best = -1
     for c in centers[1:]:
@@ -188,10 +176,5 @@ def generate(width, height, seed):
         if d > best:
             best = d
             exit_pos = c
-    grid[exit_pos[1]][exit_pos[0]] = TileType.EXIT
+    grid[exit_pos[1]][exit_pos[0]] = EXIT
     return grid, spawn, exit_pos, rooms, centers
-
-
-# для обратной совместимости тестов
-def generate_with_rooms(width, height, seed):
-    return generate(width, height, seed)

@@ -1,16 +1,15 @@
-import math  # вроде не использую, оставил пока
-
 from src.entities.entity import Entity
 from src.core.constants import (
-    ENEMY_COLOR, SPIDER_COLOR, EnemyState,
+    ENEMY_COLOR, SPIDER_COLOR,
+    PATROL, CHASE, RETURN,
     DETECT_RADIUS, LOSE_RADIUS,
     SPIDER_DETECT_RADIUS, SPIDER_LOSE_RADIUS,
-    MOTH_HP, SPIDER_HP
+    MOTH_HP, SPIDER_HP,
 )
 
 
 class Enemy(Entity):
-    """Враг. Поведение через автомат Patrol -> Chase -> Return."""
+    """Враг. Поведение через автомат PATROL -> CHASE -> RETURN."""
 
     def __init__(self, tx, ty, waypoints, hp=MOTH_HP,
                  detect_radius=DETECT_RADIUS, lose_radius=LOSE_RADIUS,
@@ -21,7 +20,7 @@ class Enemy(Entity):
         self.lose_radius = lose_radius
         self.waypoints = list(waypoints) if waypoints else [(tx, ty)]
         self.wp_index = 0
-        self.state = EnemyState.PATROL
+        self.state = PATROL
         self.path = []
         self.move_cooldown = 0.0
         self.move_period = move_period
@@ -43,21 +42,20 @@ class Enemy(Entity):
         return False
 
     def distance_to(self, tx, ty):
-        # манхэттенское расстояние
         return abs(self.tx - tx) + abs(self.ty - ty)
 
     def update_fsm(self, player_tx, player_ty):
         dist = self.distance_to(player_tx, player_ty)
-        if self.state == EnemyState.PATROL:
+        if self.state == PATROL:
             if dist <= self.detect_radius:
-                self.state = EnemyState.CHASE
-        elif self.state == EnemyState.CHASE:
+                self.state = CHASE
+        elif self.state == CHASE:
             if dist > self.lose_radius:
-                self.state = EnemyState.RETURN
-        elif self.state == EnemyState.RETURN:
+                self.state = RETURN
+        elif self.state == RETURN:
             wp = self.waypoints[self.wp_index]
             if self.tx == wp[0] and self.ty == wp[1]:
-                self.state = EnemyState.PATROL
+                self.state = PATROL
 
     def current_waypoint(self):
         return self.waypoints[self.wp_index]
@@ -74,7 +72,7 @@ class Enemy(Entity):
 
 
 class Spider(Enemy):
-    """Паук. Быстрее моли, ближе видит, но хрупкий (1 HP)."""
+    """Паук. Быстрее моли, видит ближе, HP меньше."""
 
     def __init__(self, tx, ty, waypoints):
         super().__init__(

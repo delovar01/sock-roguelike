@@ -1,58 +1,50 @@
+import os
 import pygame
 
 from src.core.constants import ASSETS_DIR
 
 
 class ResourceManager:
-    """Кеш звуков и шрифтов. Чтобы каждый раз не грузить заново."""
+    """Кеш звуков и шрифтов."""
 
     def __init__(self):
         self.sounds = {}
         self.fonts = {}
         self.music_volume = 0.4
-        # на серверах без звука mixer может не подняться
         try:
             pygame.mixer.init()
-            self.sound_enabled = True
+            self.sound_on = True
         except pygame.error:
-            self.sound_enabled = False
-
-    def load_sound(self, name):
-        if not self.sound_enabled:
-            return None
-        if name in self.sounds:
-            return self.sounds[name]
-        path = ASSETS_DIR / "sounds" / name
-        if not path.exists():
-            return None
-        sound = pygame.mixer.Sound(str(path))
-        self.sounds[name] = sound
-        return sound
+            self.sound_on = False
 
     def play_sound(self, name, volume=0.6):
-        s = self.load_sound(name)
-        if s is not None:
-            s.set_volume(volume)
-            s.play()
+        if not self.sound_on:
+            return
+        if name not in self.sounds:
+            path = os.path.join(ASSETS_DIR, "sounds", name)
+            if not os.path.exists(path):
+                return
+            self.sounds[name] = pygame.mixer.Sound(path)
+        s = self.sounds[name]
+        s.set_volume(volume)
+        s.play()
 
     def get_font(self, size):
-        if size in self.fonts:
-            return self.fonts[size]
-        font = pygame.font.SysFont("Arial", size)
-        self.fonts[size] = font
-        return font
+        if size not in self.fonts:
+            self.fonts[size] = pygame.font.SysFont("Arial", size)
+        return self.fonts[size]
 
     def play_music(self, name, volume=None):
-        if not self.sound_enabled:
+        if not self.sound_on:
             return
-        path = ASSETS_DIR / "sounds" / name
-        if not path.exists():
+        path = os.path.join(ASSETS_DIR, "sounds", name)
+        if not os.path.exists(path):
             return
         if volume is not None:
             self.music_volume = volume
-        pygame.mixer.music.load(str(path))
+        pygame.mixer.music.load(path)
         pygame.mixer.music.set_volume(self.music_volume)
-        pygame.mixer.music.play(-1)  # -1 = бесконечный луп
+        pygame.mixer.music.play(-1)
 
     def change_music_volume(self, delta):
         self.music_volume += delta
@@ -60,9 +52,5 @@ class ResourceManager:
             self.music_volume = 0
         if self.music_volume > 1:
             self.music_volume = 1
-        if self.sound_enabled:
+        if self.sound_on:
             pygame.mixer.music.set_volume(self.music_volume)
-
-    def stop_music(self):
-        if self.sound_enabled:
-            pygame.mixer.music.stop()

@@ -1,22 +1,21 @@
 import pygame
 
 from src.core.constants import (
-    TILE_SIZE, EnemyState,
-    LIGHT_ENABLED, LIGHT_RADIUS, LIGHT_FADE, LIGHT_DARKNESS,
+    TILE_SIZE, PATROL, CHASE, RETURN,
+    LIGHT_RADIUS, LIGHT_FADE, LIGHT_DARKNESS,
 )
 
 
-# цвета для отладки врагов по их состоянию
-# (методичка про debug так и советует)
+# цвета для отладки состояния врагов
 STATE_COLORS = {
-    EnemyState.PATROL: (80, 200, 80),
-    EnemyState.CHASE: (240, 180, 40),
-    EnemyState.RETURN: (80, 140, 240),
+    PATROL: (80, 200, 80),
+    CHASE: (240, 180, 40),
+    RETURN: (80, 140, 240),
 }
 
 
 class RenderSystem:
-    """Рисует мир и сущности. Логики нет, только отрисовка."""
+    """Рисует мир и сущности."""
 
     def __init__(self):
         self.debug = False
@@ -31,75 +30,50 @@ class RenderSystem:
                 e.draw(surface, camera)
 
     def draw_lighting(self, surface, player, camera):
-        """Тёмный слой с дыркой вокруг игрока — эффект факела.
-
-        Идея простая: накладываем поверх экрана полупрозрачную
-        чёрную поверхность и в позиции игрока вырезаем прозрачный круг.
-        Между светом и темнотой делаем мягкое кольцо полутени.
-        """
-        if not LIGHT_ENABLED:
-            return
+        """Тёмный слой с дыркой вокруг игрока — эффект факела."""
         dark = pygame.Surface(surface.get_size(), pygame.SRCALPHA)
         dark.fill((0, 0, 0, LIGHT_DARKNESS))
-
-        # центр игрока на экране
         px = player.tx * TILE_SIZE - camera.offset_x + TILE_SIZE // 2
         py = player.ty * TILE_SIZE - camera.offset_y + TILE_SIZE // 2
-
-        # видимая зона — полностью прозрачная (вычитаем из тёмного слоя)
         pygame.draw.circle(dark, (0, 0, 0, 0), (px, py), LIGHT_RADIUS)
-        # мягкая полутень кольцом
         pygame.draw.circle(
             dark, (0, 0, 0, LIGHT_DARKNESS // 2),
-            (px, py), LIGHT_RADIUS + LIGHT_FADE, width=LIGHT_FADE
+            (px, py), LIGHT_RADIUS + LIGHT_FADE, width=LIGHT_FADE,
         )
         surface.blit(dark, (0, 0))
 
     def draw_enemy_hp(self, surface, enemies, camera):
-        """Полоска HP над каждым раненым врагом."""
+        """Полоска HP над раненым врагом."""
         for enemy in enemies:
             if not enemy.alive:
                 continue
-            # не показываем у полностью здоровых — чтобы не засорять экран
             max_hp = getattr(enemy, "_max_hp", None)
             if max_hp is None:
-                max_hp = enemy.hp  # запомнить как видели первый раз
+                max_hp = enemy.hp
                 enemy._max_hp = max_hp
             if enemy.hp >= max_hp:
                 continue
             ex = enemy.tx * TILE_SIZE - camera.offset_x
             ey = enemy.ty * TILE_SIZE - camera.offset_y
-            # фон полоски
             pygame.draw.rect(surface, (60, 0, 0), (ex + 4, ey - 6, TILE_SIZE - 8, 4))
-            # заполнение по HP
             w = int((TILE_SIZE - 8) * enemy.hp / max_hp)
             pygame.draw.rect(surface, (220, 60, 60), (ex + 4, ey - 6, w, 4))
 
     def draw_debug(self, surface, enemies, camera, fps):
-        # вся отладка только если включена клавишей F3
         if not self.debug:
             return
-
         for enemy in enemies:
             if not enemy.alive:
                 continue
-
-            # хитбокс врага — рамка по тайлу
             ex = enemy.tx * TILE_SIZE - camera.offset_x
             ey = enemy.ty * TILE_SIZE - camera.offset_y
             pygame.draw.rect(surface, (255, 255, 255), (ex, ey, TILE_SIZE, TILE_SIZE), 1)
-
-            # цветовое кодирование состояния
             state_color = STATE_COLORS.get(enemy.state, (200, 200, 200))
             pygame.draw.circle(surface, state_color, (ex + 6, ey + 6), 5)
-
-            # путь A* красными точками
             for tx, ty in enemy.path:
                 x = tx * TILE_SIZE - camera.offset_x + TILE_SIZE // 2
                 y = ty * TILE_SIZE - camera.offset_y + TILE_SIZE // 2
                 pygame.draw.circle(surface, (255, 80, 80), (x, y), 4)
-
-        # FPS в правом нижнем углу
         font = pygame.font.SysFont("Arial", 16)
-        text = font.render(f"FPS: {int(fps)}", True, (255, 255, 255))
+        text = font.render("FPS: " + str(int(fps)), True, (255, 255, 255))
         surface.blit(text, (surface.get_width() - 80, surface.get_height() - 24))

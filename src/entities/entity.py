@@ -19,16 +19,7 @@ class Entity:
         self.tx = tx
         self.ty = ty
 
-    @property
-    def position(self):
-        return (self.tx, self.ty)
-
-    def get_rect(self):
-        return pygame.Rect(self.tx * TILE_SIZE, self.ty * TILE_SIZE,
-                           TILE_SIZE, TILE_SIZE)
-
     def update(self, dt, world):
-        # переопределяется в наследниках
         pass
 
     def draw(self, surface, camera):
