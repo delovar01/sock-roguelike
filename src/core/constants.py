@@ -9,8 +9,8 @@ WINDOW_TITLE = "Носок-одиночка"
 
 # тайлы
 TILE_SIZE = 32
-MAP_WIDTH = 40
-MAP_HEIGHT = 30
+MAP_WIDTH = 50
+MAP_HEIGHT = 36
 
 # игрок
 PLAYER_SPEED = 4
@@ -45,14 +45,14 @@ SCORE_KILL = 50
 
 # подсветка факелом
 LIGHT_ENABLED = True
-LIGHT_RADIUS = 130          # полностью видно в этом радиусе (пикселях)
-LIGHT_FADE = 40             # ширина мягкой полутени
-LIGHT_DARKNESS = 210        # 0..255, насколько тёмная неосвещённая часть
+LIGHT_RADIUS = 110          # полностью видно в этом радиусе (пикселях)
+LIGHT_FADE = 50             # ширина мягкой полутени
+LIGHT_DARKNESS = 220        # 0..255, насколько тёмная неосвещённая часть
 
 # уровень и BSP
-LEVELS_COUNT = 3
+LEVELS_COUNT = 5
 BSP_MIN_LEAF_SIZE = 7
-BSP_MAX_DEPTH = 5
+BSP_MAX_DEPTH = 6
 ROOM_MIN_SIZE = 4
 ROOM_PADDING = 1
 

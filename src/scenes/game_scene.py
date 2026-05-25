@@ -21,22 +21,24 @@ from src.persistence.save_manager import save_game, load_game
 
 
 def _spawn_enemies_and_items(rooms, centers, spawn, exit_pos, rng, level_num):
-    """Расставляем врагов и предметы в комнатах кроме стартовой и выходной.
-
-    На каждом уровне обязательно появляется один Key.
-    """
+    """Расставляем врагов и предметы. На каждом уровне обязательно один Key."""
     enemies = []
     items = []
     if len(rooms) < 2:
         return enemies, items
 
-    enemy_count = min(1 + level_num, len(rooms) - 1)
-    # минимум +1 предмет под ключ
-    item_count = min(2 + level_num, len(rooms) - 1)
+    # с уровнем растёт число врагов и их HP
+    enemy_count = min(2 + level_num, len(rooms) - 1)
+    # предметов меньше чем раньше — иначе слишком легко лечиться
+    item_count = min(2 + level_num // 2, len(rooms) - 1)
 
     skip_centers = {spawn, exit_pos}
     available = [c for c in centers if c not in skip_centers]
     rng.shuffle(available)
+
+    # +1 HP врагам за каждые 2 уровня. На 5-м моль уже с 4 HP
+    moth_hp = 2 + (level_num - 1) // 2
+    spider_hp = 1 + (level_num - 1) // 2
 
     # враги: на 1-м уровне только моли, со 2-го появляются пауки
     enemy_slots = available[:enemy_count]
@@ -45,9 +47,11 @@ def _spawn_enemies_and_items(rooms, centers, spawn, exit_pos, rng, level_num):
         wps = _make_waypoints(room)
         # каждый третий враг (начиная с уровня 2) — паук
         if level_num >= 2 and i % 3 == 1:
-            enemies.append(Spider(c[0], c[1], wps))
+            sp = Spider(c[0], c[1], wps)
+            sp.hp = spider_hp
+            enemies.append(sp)
         else:
-            enemies.append(Enemy(c[0], c[1], wps))
+            enemies.append(Enemy(c[0], c[1], wps, hp=moth_hp))
 
     # предметы: первый слот всегда ключ
     item_slots = available[enemy_count:enemy_count + item_count]
