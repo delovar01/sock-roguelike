@@ -26,6 +26,8 @@ def _spawn_enemies_and_items(rooms, centers, spawn, exit_pos, rng, level_num):
     items = []
     if len(rooms) < 2:
         return enemies, items
+    # на каждом уровне врагов и пуговиц чуть больше
+    # TODO: можно ещё типы врагов добавить, паука например
     enemy_count = min(1 + level_num, len(rooms) - 1)
     item_count = min(2 + level_num, len(rooms) - 1)
 
@@ -147,24 +149,29 @@ class GameScene(BaseScene):
     def update(self, dt):
         if self._game_over or self.paused:
             return
-        # движение игрока — по событию из InputManager
+
+        # порядок шагов в кадре — как в методичке
+        # Input -> Movement -> Collision -> AI -> Logic
+
+        # 1. Input — что нажал игрок в этом кадре
         cmd = self.game.input_manager.move_cmd
         if cmd is not None:
             dx, dy = cmd
+            # 2. Movement игрока + 3. Collision сразу же
             moved = self.movement.try_move_player(self.player, dx, dy, self.level)
             if moved:
                 self._after_player_move()
 
-        # авто-сейв при первом апдейте уровня
+        # авто-сейв на старте уровня
         if self._save_on_next_step:
             save_game(self.level_num, self.seed, self.player.hp, self.player.buttons)
             self._save_on_next_step = False
 
-        # ИИ — обновление врагов
+        # 4. AI — обновление врагов (вкл. их Movement)
         self.ai.update(self.enemies, self.player, self.level, dt, self.movement)
-        # пересечения после движения врагов
+        # 5. Collision после хода врагов
         self.collisions.check_player_enemies(self.player, self.enemies)
-        # таймер неуязвимости
+        # 6. Logic — таймер неуязвимости игрока
         self.player.update(dt, None)
 
     def _after_player_move(self):
@@ -180,7 +187,8 @@ class GameScene(BaseScene):
     def draw(self, surface):
         all_entities = list(self.items) + list(self.enemies) + [self.player]
         self.render_sys.draw(surface, self.level, all_entities, self.camera)
-        self.render_sys.draw_debug(surface, self.enemies, self.camera)
+        fps = self.game.clock.get_fps()
+        self.render_sys.draw_debug(surface, self.enemies, self.camera, fps)
         self.hud.draw(surface, self.player, self.level_num)
         if self.paused:
             self._draw_pause(surface)

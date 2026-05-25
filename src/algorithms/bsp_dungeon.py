@@ -79,6 +79,7 @@ def split_node(node, rng, depth):
 def make_rooms(node, rng):
     """2. В каждом листе ставим комнату случайного размера."""
     if node.is_leaf():
+        # TODO: для уровней 2-3 можно делать комнаты побольше
         max_w = node.w - ROOM_PADDING * 2
         max_h = node.h - ROOM_PADDING * 2
         if max_w < ROOM_MIN_SIZE or max_h < ROOM_MIN_SIZE:

@@ -1,10 +1,19 @@
 import pygame
 
-from src.core.constants import TILE_SIZE
+from src.core.constants import TILE_SIZE, EnemyState
+
+
+# цвета для отладки врагов по их состоянию
+# (методичка про debug так и советует)
+STATE_COLORS = {
+    EnemyState.PATROL: (80, 200, 80),
+    EnemyState.CHASE: (240, 180, 40),
+    EnemyState.RETURN: (80, 140, 240),
+}
 
 
 class RenderSystem:
-    """Рисует мир и сущности. Никакой логики, только отрисовка."""
+    """Рисует мир и сущности. Логики нет, только отрисовка."""
 
     def __init__(self):
         self.debug = False
@@ -18,14 +27,31 @@ class RenderSystem:
             if e.alive:
                 e.draw(surface, camera)
 
-    def draw_debug(self, surface, enemies, camera):
+    def draw_debug(self, surface, enemies, camera, fps):
+        # вся отладка только если включена клавишей F3
         if not self.debug:
             return
+
         for enemy in enemies:
             if not enemy.alive:
                 continue
-            # отрисовать путь A* как кружки
+
+            # хитбокс врага — рамка по тайлу
+            ex = enemy.tx * TILE_SIZE - camera.offset_x
+            ey = enemy.ty * TILE_SIZE - camera.offset_y
+            pygame.draw.rect(surface, (255, 255, 255), (ex, ey, TILE_SIZE, TILE_SIZE), 1)
+
+            # цветовое кодирование состояния
+            state_color = STATE_COLORS.get(enemy.state, (200, 200, 200))
+            pygame.draw.circle(surface, state_color, (ex + 6, ey + 6), 5)
+
+            # путь A* красными точками
             for tx, ty in enemy.path:
                 x = tx * TILE_SIZE - camera.offset_x + TILE_SIZE // 2
                 y = ty * TILE_SIZE - camera.offset_y + TILE_SIZE // 2
                 pygame.draw.circle(surface, (255, 80, 80), (x, y), 4)
+
+        # FPS в правом нижнем углу
+        font = pygame.font.SysFont("Arial", 16)
+        text = font.render(f"FPS: {int(fps)}", True, (255, 255, 255))
+        surface.blit(text, (surface.get_width() - 80, surface.get_height() - 24))
