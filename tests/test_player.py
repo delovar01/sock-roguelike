@@ -13,7 +13,7 @@ def test_take_damage_reduces_hp():
 def test_take_damage_does_not_go_below_zero():
     p = Player(0, 0)
     p.take_damage(1)
-    p._invuln_timer = 0  # сбрасываем для теста
+    p.invuln_timer = 0  # сбрасываем чтобы можно было ударить ещё раз
     p.take_damage(999)
     assert p.hp == 0
     assert p.is_dead()

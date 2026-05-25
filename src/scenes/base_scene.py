@@ -1,20 +1,14 @@
-from abc import ABC, abstractmethod
-
-
-class BaseScene(ABC):
-    """Базовая сцена. Каждая сцена имеет 3 метода — узкий интерфейс."""
+class BaseScene:
+    """Базовая сцена. Дети переопределяют handle_event, update, draw."""
 
     def __init__(self, game):
         self.game = game
 
-    @abstractmethod
     def handle_event(self, event):
-        ...
+        pass
 
-    @abstractmethod
     def update(self, dt):
-        ...
+        pass
 
-    @abstractmethod
     def draw(self, surface):
-        ...
+        pass

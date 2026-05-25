@@ -1,22 +1,17 @@
-"""Простая шина событий — паттерн Observer.
-
-Системы могут эмитить события и подписываться на них,
-не зная друг о друге напрямую.
-"""
-
-
 class EventBus:
+    """Простая шина событий. Кто-то подписывается, кто-то вызывает emit."""
+
     def __init__(self):
-        self._subs = {}
+        self.subs = {}
 
-    def subscribe(self, event_name, callback):
-        if event_name not in self._subs:
-            self._subs[event_name] = []
-        self._subs[event_name].append(callback)
+    def subscribe(self, name, callback):
+        if name not in self.subs:
+            self.subs[name] = []
+        self.subs[name].append(callback)
 
-    def emit(self, event_name, **payload):
-        for cb in self._subs.get(event_name, []):
-            cb(**payload)
+    def emit(self, name):
+        for cb in self.subs.get(name, []):
+            cb()
 
     def clear(self):
-        self._subs.clear()
+        self.subs.clear()

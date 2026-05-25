@@ -40,15 +40,22 @@ HUD и звуковая подсистема его слушают, и наоб�
 - `DeathScene` — экран смерти.
 - `WinScene` — экран победы (после 3-го уровня).
 
-Базовый класс `BaseScene` — это `abc.ABC` с тремя абстрактными
-методами: `handle_event`, `update`, `draw`. Узкий интерфейс
-(принцип Interface Segregation).
+Базовый класс `BaseScene` определяет три метода: `handle_event`,
+`update`, `draw`. Каждый дочерний класс их переопределяет. Получается
+узкий интерфейс — принцип Interface Segregation.
+
+В `GameScene` есть встроенная пауза (Esc) с пунктами:
+- Esc — продолжить
+- Q — выйти в меню (с автосохранением)
+- +/- — изменить громкость музыки
+
+Это и есть «меню настроек» из методички.
 
 ## Сущности
 
-Все игровые объекты — наследники `Entity` (`src/entities/entity.py`,
-`abc.ABC`). Хранят позицию в тайлах, не в пикселях, чтобы не зависеть
-от размера тайла.
+Все игровые объекты — наследники `Entity` (`src/entities/entity.py`).
+Хранят позицию в тайлах, не в пикселях, чтобы не зависеть от размера
+тайла.
 
 - `Player` — носок. `_hp` инкапсулирован (одно подчёркивание плюс
   `@property hp` без сеттера). Изменение HP только через `take_damage()`
@@ -85,7 +92,7 @@ HUD и звуковая подсистема его слушают, и наоб�
 src/
   core/         constants, game, event_bus, input_manager, resource_manager
   scenes/       base_scene, menu_scene, game_scene, death_scene, win_scene
-  entities/     entity (ABC), player, enemy, item
+  entities/     entity, player, enemy, item
   systems/      movement, collision, ai, render
   algorithms/   bsp_dungeon, a_star
   world/        tile, level, camera

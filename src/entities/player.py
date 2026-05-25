@@ -3,13 +3,13 @@ from src.core.constants import PLAYER_COLOR, PLAYER_MAX_HP
 
 
 class Player(Entity):
-    """Игрок-носок. HP инкапсулирован: снаружи только через property."""
+    """Игрок-носок. HP инкапсулировано через _hp + property hp."""
 
     def __init__(self, tx, ty):
         super().__init__(tx, ty, PLAYER_COLOR)
         self._hp = PLAYER_MAX_HP
         self._buttons = 0
-        self._invuln_timer = 0.0  # короткая неуязвимость после удара
+        self.invuln_timer = 0.0  # короткая неуязвимость после удара
 
     @property
     def hp(self):
@@ -19,21 +19,21 @@ class Player(Entity):
     def buttons(self):
         return self._buttons
 
-    @property
-    def is_invulnerable(self):
-        return self._invuln_timer > 0
-
     def take_damage(self, amount=1):
-        if self._invuln_timer > 0:
+        if self.invuln_timer > 0:
             return False
-        self._hp = max(0, self._hp - amount)
-        self._invuln_timer = 0.8
+        self._hp -= amount
+        if self._hp < 0:
+            self._hp = 0
+        self.invuln_timer = 0.8
         return True
 
     def heal(self, amount=1):
         if self._hp >= PLAYER_MAX_HP:
             return False
-        self._hp = min(PLAYER_MAX_HP, self._hp + amount)
+        self._hp += amount
+        if self._hp > PLAYER_MAX_HP:
+            self._hp = PLAYER_MAX_HP
         return True
 
     def add_button(self):
@@ -43,10 +43,10 @@ class Player(Entity):
         return self._hp <= 0
 
     def update(self, dt, world):
-        if self._invuln_timer > 0:
-            self._invuln_timer -= dt
+        if self.invuln_timer > 0:
+            self.invuln_timer -= dt
 
     def set_state(self, hp, buttons):
-        # для загрузки сохранений
+        # используется при загрузке сохранения
         self._hp = hp
         self._buttons = buttons

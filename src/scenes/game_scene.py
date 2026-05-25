@@ -71,10 +71,10 @@ class GameScene(BaseScene):
         self.hud = Hud(game.resources)
 
         # подписки на события
-        game.event_bus.subscribe("item_picked",
-                                 lambda **kw: game.resources.play_sound("pickup.wav"))
+        game.event_bus.subscribe("item_picked", self._on_item_picked)
         game.event_bus.subscribe("player_died", self._on_player_died)
         game.event_bus.subscribe("level_completed", self._on_level_completed)
+        self.paused = False
 
         if load_save:
             data = load_game()
@@ -109,13 +109,15 @@ class GameScene(BaseScene):
         self._save_on_next_step = True  # авто-сейв на старте уровня
         self._game_over = False
 
-    def _on_player_died(self, **kwargs):
+    def _on_item_picked(self):
+        self.game.resources.play_sound("pickup.wav")
+
+    def _on_player_died(self):
         self.game.resources.play_sound("death.wav")
         self._game_over = True
-        # отложим переключение на следующий кадр
         self.game.change_scene(SceneId.DEATH)
 
-    def _on_level_completed(self, **kwargs):
+    def _on_level_completed(self):
         self.game.resources.play_sound("win.wav")
         if self.level_num >= LEVELS_COUNT:
             self.game.change_scene(SceneId.WIN)
@@ -127,14 +129,23 @@ class GameScene(BaseScene):
         if event.type != pygame.KEYDOWN:
             return
         if event.key == pygame.K_ESCAPE:
-            # сохраняем перед выходом в меню
-            save_game(self.level_num, self.seed, self.player.hp, self.player.buttons)
-            self.game.change_scene(SceneId.MENU)
-        if event.key == pygame.K_F3:
+            # на паузу или с паузы
+            self.paused = not self.paused
+            if self.paused:
+                # сохраняем сразу когда зашли в паузу
+                save_game(self.level_num, self.seed, self.player.hp, self.player.buttons)
+        elif event.key == pygame.K_F3:
             self.render_sys.toggle_debug()
+        elif self.paused and event.key == pygame.K_q:
+            # из паузы можно выйти в меню
+            self.game.change_scene(SceneId.MENU)
+        elif self.paused and event.key == pygame.K_MINUS:
+            self.game.resources.change_music_volume(-0.1)
+        elif self.paused and event.key in (pygame.K_EQUALS, pygame.K_PLUS):
+            self.game.resources.change_music_volume(0.1)
 
     def update(self, dt):
-        if self._game_over:
+        if self._game_over or self.paused:
             return
         # движение игрока — по событию из InputManager
         cmd = self.game.input_manager.move_cmd
@@ -171,6 +182,29 @@ class GameScene(BaseScene):
         self.render_sys.draw(surface, self.level, all_entities, self.camera)
         self.render_sys.draw_debug(surface, self.enemies, self.camera)
         self.hud.draw(surface, self.player, self.level_num)
+        if self.paused:
+            self._draw_pause(surface)
+
+    def _draw_pause(self, surface):
+        # затемнение
+        overlay = pygame.Surface((surface.get_width(), surface.get_height()))
+        overlay.set_alpha(170)
+        overlay.fill((0, 0, 0))
+        surface.blit(overlay, (0, 0))
+        font_big = self.game.resources.get_font(48)
+        font = self.game.resources.get_font(22)
+        cx = surface.get_width() // 2
+        cy = surface.get_height() // 2
+        title = font_big.render("Пауза", True, (255, 255, 255))
+        surface.blit(title, title.get_rect(center=(cx, cy - 80)))
+        lines = [
+            "Esc — продолжить",
+            "Q — в главное меню (сохранится)",
+            "+ / - — громкость музыки",
+        ]
+        for i, ln in enumerate(lines):
+            s = font.render(ln, True, (220, 220, 220))
+            surface.blit(s, s.get_rect(center=(cx, cy - 10 + i * 28)))
 
 
 def _seed_for_level(level_num):

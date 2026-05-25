@@ -1,4 +1,4 @@
-from src.algorithms.bsp_dungeon import generate, generate_with_rooms
+from src.algorithms.bsp_dungeon import generate
 from src.core.constants import TileType
 
 
@@ -21,24 +21,24 @@ def _flood_fill_count(grid, start):
 
 
 def test_generator_returns_grid_of_correct_size():
-    grid, spawn, exit_pos = generate(40, 30, seed=1)
+    grid, spawn, exit_pos, rooms, centers = generate(40, 30, seed=1)
     assert len(grid) == 30
     assert all(len(row) == 40 for row in grid)
 
 
 def test_same_seed_produces_same_dungeon():
-    g1, _, _ = generate(40, 30, seed=42)
-    g2, _, _ = generate(40, 30, seed=42)
+    g1, _, _, _, _ = generate(40, 30, seed=42)
+    g2, _, _, _, _ = generate(40, 30, seed=42)
     assert g1 == g2
 
 
 def test_all_floors_are_connected():
-    grid, spawn, exit_pos = generate(40, 30, seed=7)
+    grid, spawn, exit_pos, _, _ = generate(40, 30, seed=7)
     floors = sum(1 for row in grid for t in row if t != TileType.WALL)
     seen = _flood_fill_count(grid, spawn)
     assert len(seen) == floors
 
 
 def test_rooms_have_minimum_size():
-    _, _, _, rooms, _ = generate_with_rooms(40, 30, seed=3)
+    _, _, _, rooms, _ = generate(40, 30, seed=3)
     assert all(r[2] >= 4 and r[3] >= 4 for r in rooms)
