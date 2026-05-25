@@ -32,6 +32,20 @@ pytest tests/ -v
 
 24 теста, проходят примерно за секунду.
 
+## Скриншоты
+
+Главное меню:
+
+![menu](docs/diagrams/screen_menu.png)
+
+Геймплей — носок в подземелье, моль рядом:
+
+![game](docs/diagrams/screen_game.png)
+
+Debug-режим (F3) — путь A* виден красными точками:
+
+![debug](docs/diagrams/screen_debug.png)
+
 ## Структура проекта
 
 ```
