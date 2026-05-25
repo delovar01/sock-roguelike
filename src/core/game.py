@@ -50,7 +50,7 @@ class Game:
             self._scene = DeathScene(self)
         elif scene_id == SceneId.WIN:
             from src.scenes.win_scene import WinScene
-            self._scene = WinScene(self)
+            self._scene = WinScene(self, **kwargs)
 
     def quit(self):
         self._running = False

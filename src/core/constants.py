@@ -31,10 +31,17 @@ SPIDER_HP = 1
 # предметы
 BUTTON_COLOR = (230, 190, 60)      # пуговица: +1 HP
 NEEDLE_COLOR = (200, 200, 230)     # иголка: +1 урона
+KEY_COLOR = (230, 130, 50)         # ключ: открывает выход
 ITEM_COLOR = BUTTON_COLOR           # для обратной совместимости
 
 # атака игрока
 PLAYER_BASE_DAMAGE = 1
+
+# очки
+SCORE_BUTTON = 10
+SCORE_NEEDLE = 30
+SCORE_KEY = 20
+SCORE_KILL = 50
 
 # уровень и BSP
 LEVELS_COUNT = 3

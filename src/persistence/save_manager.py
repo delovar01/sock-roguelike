@@ -5,7 +5,8 @@ import json
 from src.core.constants import SAVE_FILE, SAVE_DIR
 
 
-def save_game(level_num, seed, hp, buttons, attack=1):
+def save_game(level_num, seed, hp, buttons, attack=1,
+              score=0, kills=0, time=0.0):
     SAVE_DIR.mkdir(parents=True, exist_ok=True)
     data = {
         "level_num": level_num,
@@ -13,6 +14,9 @@ def save_game(level_num, seed, hp, buttons, attack=1):
         "hp": hp,
         "buttons": buttons,
         "attack": attack,
+        "score": score,
+        "kills": kills,
+        "time": time,
     }
     try:
         SAVE_FILE.write_text(json.dumps(data, ensure_ascii=False, indent=2),

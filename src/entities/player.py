@@ -12,6 +12,11 @@ class Player(Entity):
         self.invuln_timer = 0.0
         # урон растёт от подобранных иголок
         self.attack_damage = PLAYER_BASE_DAMAGE
+        # очки и убийства — копятся за всю игру
+        self.score = 0
+        self.kills = 0
+        # ключ для выхода — сбрасывается на каждом уровне
+        self.has_key = False
 
     @property
     def hp(self):
@@ -44,6 +49,12 @@ class Player(Entity):
     def add_attack(self, amount=1):
         self.attack_damage += amount
 
+    def add_score(self, amount):
+        self.score += amount
+
+    def add_kill(self):
+        self.kills += 1
+
     def is_dead(self):
         return self._hp <= 0
 
@@ -51,9 +62,11 @@ class Player(Entity):
         if self.invuln_timer > 0:
             self.invuln_timer -= dt
 
-    def set_state(self, hp, buttons, attack=None):
+    def set_state(self, hp, buttons, attack=None, score=0, kills=0):
         # используется при загрузке сохранения
         self._hp = hp
         self._buttons = buttons
         if attack is not None:
             self.attack_damage = attack
+        self.score = score
+        self.kills = kills

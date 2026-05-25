@@ -7,9 +7,13 @@ from src.core import constants
 def test_save_then_load_roundtrip(tmp_path, monkeypatch):
     monkeypatch.setattr(sm, "SAVE_DIR", tmp_path)
     monkeypatch.setattr(sm, "SAVE_FILE", tmp_path / "slot1.json")
-    sm.save_game(level_num=2, seed=999, hp=2, buttons=5, attack=3)
+    sm.save_game(level_num=2, seed=999, hp=2, buttons=5,
+                 attack=3, score=120, kills=2, time=45.5)
     data = sm.load_game()
-    assert data == {"level_num": 2, "seed": 999, "hp": 2, "buttons": 5, "attack": 3}
+    assert data["level_num"] == 2
+    assert data["seed"] == 999
+    assert data["score"] == 120
+    assert data["time"] == 45.5
 
 
 def test_load_missing_file_returns_none(tmp_path, monkeypatch):

@@ -1,0 +1,611 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<title>Руководство по коду — Носок-одиночка</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: "Segoe UI", Tahoma, sans-serif;
+    color: #1f1f24;
+    background: #f5f5f0;
+    line-height: 1.55;
+  }
+  .layout { display: flex; min-height: 100vh; }
+  nav {
+    width: 240px;
+    background: #2b2f3a;
+    color: #d5d5d8;
+    padding: 20px 16px;
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    overflow-y: auto;
+  }
+  nav h2 {
+    color: #f0d57a;
+    font-size: 16px;
+    margin: 0 0 12px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+  nav ol { list-style: none; padding: 0; margin: 0; }
+  nav li { margin: 6px 0; }
+  nav a {
+    color: #d5d5d8;
+    text-decoration: none;
+    font-size: 14px;
+  }
+  nav a:hover { color: #fff; }
+  main {
+    flex: 1;
+    padding: 30px 50px;
+    max-width: 920px;
+  }
+  h1 { color: #2b2f3a; border-bottom: 2px solid #2b2f3a; padding-bottom: 6px; }
+  h2 {
+    color: #2b2f3a;
+    margin-top: 40px;
+    border-left: 4px solid #f0a040;
+    padding-left: 10px;
+  }
+  h3 { color: #444; margin-top: 26px; }
+  code {
+    background: #ecebe5;
+    padding: 1px 5px;
+    border-radius: 3px;
+    font-family: Consolas, monospace;
+    font-size: 0.92em;
+  }
+  pre {
+    background: #1f2330;
+    color: #e1e1e1;
+    padding: 14px 18px;
+    border-radius: 6px;
+    overflow-x: auto;
+    font-family: Consolas, monospace;
+    font-size: 13px;
+  }
+  pre code { background: transparent; color: inherit; padding: 0; }
+  .note {
+    background: #fff8d8;
+    border-left: 4px solid #f0c040;
+    padding: 10px 14px;
+    margin: 14px 0;
+  }
+  .tip {
+    background: #d9efff;
+    border-left: 4px solid #4a90d0;
+    padding: 10px 14px;
+    margin: 14px 0;
+  }
+  .file {
+    background: #ecebe5;
+    padding: 1px 5px;
+    border-radius: 3px;
+    font-family: Consolas, monospace;
+    color: #36389a;
+  }
+  table { border-collapse: collapse; margin: 14px 0; }
+  th, td { border: 1px solid #c8c8c0; padding: 8px 12px; text-align: left; }
+  th { background: #2b2f3a; color: #fff; }
+  tr:nth-child(even) td { background: #eceae4; }
+  .pipe {
+    background: #fff;
+    border: 1px solid #c8c8c0;
+    padding: 16px;
+    border-radius: 6px;
+    font-family: Consolas, monospace;
+    margin: 14px 0;
+  }
+  .arrow { color: #c08040; font-weight: bold; }
+</style>
+</head>
+<body>
+<div class="layout">
+  <nav>
+    <h2>Содержание</h2>
+    <ol>
+      <li><a href="#intro">1. Что это такое</a></li>
+      <li><a href="#start">2. С чего начать</a></li>
+      <li><a href="#map">3. Карта проекта</a></li>
+      <li><a href="#loop">4. Как работает один кадр</a></li>
+      <li><a href="#files">5. Каждый файл по порядку</a></li>
+      <li><a href="#algorithms">6. Алгоритмы простыми словами</a></li>
+      <li><a href="#solid">7. SOLID на твоих файлах</a></li>
+      <li><a href="#cheat">8. Шпаргалка на защиту</a></li>
+      <li><a href="#run">9. Как запускать и тестировать</a></li>
+    </ol>
+  </nav>
+
+<main>
+
+<h1>Руководство по коду «Носок-одиночка»</h1>
+<p>
+  Этот файл — карта твоего проекта. Открывай его в браузере и читай сверху вниз.
+  Каждый раздел отвечает на простой вопрос: «А что это вообще делает?». В конце
+  есть шпаргалка с готовыми ответами на типовые вопросы преподавателя.
+</p>
+
+<h2 id="intro">1. Что это такое</h2>
+<p>
+  Маленький top-down roguelike. Носок-герой ищет свою пару в трубах
+  стиральной машины. Три уровня, врага рубишь шагом-в-него (bump attack),
+  на каждом уровне нужно найти ключ и дойти до выхода.
+</p>
+<p>Технологии:</p>
+<ul>
+  <li>Python 3.12</li>
+  <li>pygame 2.5.2 — окно, события, отрисовка, звук</li>
+  <li>pytest 8.0 — тесты</li>
+</ul>
+
+<h2 id="start">2. С чего начать</h2>
+<p>Открой эти файлы в таком порядке, и всё станет понятно:</p>
+<ol>
+  <li><span class="file">main.py</span> — 5 строк, точка входа. Просто
+      создаёт <code>Game</code> и зовёт <code>run()</code>.</li>
+  <li><span class="file">src/core/game.py</span> — главный объект, цикл
+      игры (60 раз в секунду).</li>
+  <li><span class="file">src/core/constants.py</span> — все числа в одном
+      месте: размер окна, цвета, скорости.</li>
+  <li><span class="file">src/scenes/game_scene.py</span> — основная сцена
+      игры. Здесь живёт вся игровая логика.</li>
+  <li><span class="file">src/algorithms/bsp_dungeon.py</span> — сложный
+      алгоритм, ради которого мы получаем 15 баллов.</li>
+</ol>
+<div class="tip">
+  Совет: НЕ читай весь код подряд. Открой <span class="file">main.py</span>,
+  прочитай 5 строк, потом сразу прыгай в <code>Game.run()</code>. Дальше по
+  ссылкам.
+</div>
+
+<h2 id="map">3. Карта проекта</h2>
+<pre><code>Игра/
+├── main.py                       <span class="arrow">⟵ точка входа</span>
+├── requirements.txt              библиотеки (pygame, pytest)
+├── README.md                     краткое описание
+├── src/
+│   ├── core/                     <span class="arrow">⟵ основа</span>
+│   │   ├── constants.py          все числа/цвета/имена файлов
+│   │   ├── game.py               главный класс Game и цикл
+│   │   ├── event_bus.py          шина событий (Observer)
+│   │   ├── input_manager.py      обработка клавиатуры
+│   │   └── resource_manager.py   кеш звуков и шрифтов
+│   ├── scenes/                   <span class="arrow">⟵ экраны</span>
+│   │   ├── base_scene.py         базовый класс сцены
+│   │   ├── menu_scene.py         главное меню
+│   │   ├── game_scene.py         сама игра
+│   │   ├── death_scene.py        экран смерти
+│   │   └── win_scene.py          экран победы
+│   ├── entities/                 <span class="arrow">⟵ объекты в мире</span>
+│   │   ├── entity.py             базовый Entity
+│   │   ├── player.py             носок
+│   │   ├── enemy.py              моль и паук
+│   │   └── item.py               пуговица, иголка, ключ
+│   ├── systems/                  <span class="arrow">⟵ логика</span>
+│   │   ├── movement_system.py    двигает объекты
+│   │   ├── collision_system.py   пересечения и удары
+│   │   ├── ai_system.py          поведение врагов
+│   │   └── render_system.py      рисует на экран
+│   ├── algorithms/               <span class="arrow">⟵ алгоритмы</span>
+│   │   ├── bsp_dungeon.py        генерация уровня (СЛОЖНЫЙ)
+│   │   └── a_star.py             поиск пути
+│   ├── world/                    <span class="arrow">⟵ карта</span>
+│   │   ├── tile.py               вспомогательные функции
+│   │   ├── level.py              сетка тайлов
+│   │   └── camera.py             камера со смещением
+│   ├── ui/                       <span class="arrow">⟵ интерфейс</span>
+│   │   ├── menu.py               отрисовка меню
+│   │   └── hud.py                полоска HP, очки, время
+│   └── persistence/              <span class="arrow">⟵ сохранения</span>
+│       └── save_manager.py       JSON-сейв
+├── assets/
+│   ├── sounds/                   звуки и музыка (.wav)
+│   └── story/intro.txt           текст сюжета для меню
+├── levels/                       (резерв под preset-уровни)
+├── saves/                        сюда падает slot1.json
+├── tests/                        pytest, 8 файлов, 27 тестов
+└── docs/                         документация и эта html</code></pre>
+
+<h2 id="loop">4. Как работает один кадр</h2>
+<p>
+  Игра — это бесконечный цикл, который крутится 60 раз в секунду. Один проход
+  цикла — один «кадр». Что происходит за кадр:
+</p>
+<div class="pipe">
+1. <b>tick(60)</b> — pygame ждёт чтобы получилось ровно 60 FPS, считает <code>dt</code> (секунды от прошлого кадра)<br>
+2. <b>обработка событий</b> — закрытие окна, нажатия клавиш Esc/F3/Space<br>
+3. <b>input_manager.update(dt)</b> — смотрит зажатые WASD/стрелки, выставляет <code>move_cmd</code><br>
+4. <b>scene.update(dt)</b> — основная логика этого кадра (см. ниже)<br>
+5. <b>screen.fill(BG_COLOR)</b> — чистим экран<br>
+6. <b>scene.draw(screen)</b> — рисуем всё<br>
+7. <b>display.flip()</b> — показываем кадр игроку<br>
+8. <b>_apply_scene_change()</b> — если сцена сменилась (например игрок выиграл)
+</div>
+
+<p>А что внутри <code>scene.update(dt)</code> у <code>GameScene</code>?
+Это «канонический порядок систем» из методички:</p>
+
+<div class="pipe">
+1. <b>Input</b> — взяли <code>move_cmd</code> из <code>input_manager</code><br>
+2. <b>Movement</b> игрока — попытка шагнуть<br>
+&nbsp;&nbsp;&nbsp;<span class="arrow">└─</span> Если в той клетке враг — bump attack (вместо движения бьём)<br>
+3. <b>Collision</b> — игрок встал на предмет? на выход?<br>
+4. <b>AI</b> — обновили автоматы врагов, дёрнули A* в Chase, двинули их<br>
+5. <b>Collision</b> снова — теперь после хода врагов<br>
+6. <b>Logic</b> — таймер неуязвимости, время уровня
+</div>
+
+<h2 id="files">5. Каждый файл по порядку</h2>
+
+<h3>main.py</h3>
+<pre><code>from src.core.game import Game
+
+if __name__ == "__main__":
+    Game().run()</code></pre>
+<p>5 строк. Создаёт <code>Game</code>, зовёт <code>run()</code>. Всё.</p>
+
+<h3>src/core/constants.py</h3>
+<p>
+  Все числа в одном месте. Размер окна, тайлов, скорости, цвета, пути к файлам,
+  enum-ы типов тайлов / состояний врага / id сцен. Когда хочешь что-то
+  подкрутить — иди сюда.
+</p>
+<div class="tip">Почему в одном месте? Принцип <b>чистоты</b> из критериев
+  (3 балла): не должно быть «магических чисел» в коде. Всё именованное.</div>
+
+<h3>src/core/game.py — главный класс</h3>
+<p><code>Game</code> — это «корневой» объект. Внутри:</p>
+<ul>
+  <li><code>screen</code> — окно pygame</li>
+  <li><code>clock</code> — измеряет FPS</li>
+  <li><code>event_bus</code> — общая шина событий</li>
+  <li><code>input_manager</code> — клавиатура</li>
+  <li><code>resources</code> — звуки и шрифты</li>
+  <li><code>_scene</code> — активная сцена (Menu/Game/Death/Win)</li>
+</ul>
+<p><b>run()</b> — это тот самый бесконечный цикл (см. раздел 4).</p>
+<p><b>change_scene(id)</b> — отложенно меняет сцену (после конца текущего тика,
+   чтобы не сломать обход).</p>
+
+<h3>src/core/event_bus.py — шина событий</h3>
+<pre><code>class EventBus:
+    def __init__(self):
+        self.subs = {}
+
+    def subscribe(self, name, callback):
+        if name not in self.subs:
+            self.subs[name] = []
+        self.subs[name].append(callback)
+
+    def emit(self, name):
+        for cb in self.subs.get(name, []):
+            cb()</code></pre>
+<p>
+  Это паттерн <b>Observer</b>. Кто-то «эмитит» (выпускает) событие,
+  кто-то на него «подписан». Никто никого не знает напрямую.
+</p>
+<p>У нас 5 событий:</p>
+<ul>
+  <li><code>item_picked</code> — подобрали предмет (играет звук)</li>
+  <li><code>player_attacked</code> — игрок ударил (играет звук удара)</li>
+  <li><code>enemy_killed</code> — враг убит (играет звук, +50 очков)</li>
+  <li><code>player_died</code> — HP=0 (переход в DeathScene)</li>
+  <li><code>level_completed</code> — дошли до выхода (следующий уровень или WinScene)</li>
+</ul>
+
+<h3>src/core/input_manager.py — клавиатура</h3>
+<p>Один класс. Каждый кадр <code>update(dt)</code> смотрит зажаты ли WASD/стрелки:</p>
+<ul>
+  <li>Первый раз направление зажато — сразу <code>move_cmd</code> = (dx, dy)</li>
+  <li>Ждём 0.18 секунды (HOLD_DELAY)</li>
+  <li>Потом каждые 0.08 секунды — снова <code>move_cmd</code></li>
+</ul>
+<p>Это и есть «зажми клавишу — двигайся». Esc, Space, F3 обрабатываются
+   отдельно — у них автоповтора нет.</p>
+
+<h3>src/core/resource_manager.py</h3>
+<p>Кеш. Один раз загрузил звук — лежит в словаре, второй раз грузить не надо.
+   Тут же музыка через <code>pygame.mixer.music</code>.</p>
+
+<h3>src/scenes/base_scene.py</h3>
+<p>Простой базовый класс с тремя методами: <code>handle_event</code>,
+   <code>update</code>, <code>draw</code>. Все сцены наследуют его и
+   переопределяют эти методы.</p>
+
+<h3>src/scenes/menu_scene.py</h3>
+<p>Главное меню. Кнопки «Новая игра», «Продолжить» (если есть сохранение),
+   «Выход». Сверху — сюжетный текст из <code>assets/story/intro.txt</code>.</p>
+
+<h3>src/scenes/game_scene.py — ГЛАВНАЯ сцена</h3>
+<p>Самый большой файл. Внутри:</p>
+<ul>
+  <li><b>_spawn_enemies_and_items</b> — расставляет врагов и предметы по
+      комнатам (первый предмет всегда ключ)</li>
+  <li><b>_init_level</b> — генерирует уровень через BSP, создаёт игрока,
+      врагов, предметы</li>
+  <li><b>handle_event</b> — Esc (пауза), Space (удар), F3 (debug)</li>
+  <li><b>update</b> — главная логика кадра (см. раздел 4)</li>
+  <li><b>_after_player_move</b> — что делать после успешного шага: подбор,
+      пересечения, проверка выхода (с ключом)</li>
+  <li><b>_save</b> — JSON-сохранение всего состояния</li>
+  <li><b>_draw_pause</b> — затемнение и меню паузы</li>
+</ul>
+
+<h3>src/scenes/death_scene.py / win_scene.py</h3>
+<p>DeathScene — простая. WinScene принимает <code>stats</code> и выводит
+   итоговый счёт, убитых врагов, время.</p>
+
+<h3>src/entities/entity.py — базовый класс</h3>
+<p>Хранит позицию в <b>тайлах</b> (не пикселях), цвет, флаг <code>alive</code>.
+   Метод <code>draw</code> рисует прямоугольник со смещением камеры. Все игровые
+   объекты наследуют его.</p>
+
+<h3>src/entities/player.py — носок</h3>
+<p>Главное:</p>
+<ul>
+  <li><code>_hp</code> с подчёркиванием — «приватное» поле. Снаружи доступ
+      только через <code>@property hp</code> (геттер без сеттера).
+      <b>Это и есть инкапсуляция</b>.</li>
+  <li><code>take_damage(amount)</code> — единственный способ уменьшить HP</li>
+  <li><code>heal(amount)</code> — добавить HP до максимума</li>
+  <li><code>attack_damage</code> — растёт от иголок</li>
+  <li><code>score</code>, <code>kills</code> — копятся за игру</li>
+  <li><code>has_key</code> — сбрасывается на каждом уровне</li>
+</ul>
+
+<h3>src/entities/enemy.py — моль и паук</h3>
+<p>Класс <code>Enemy</code> — моль. Хранит HP, состояние FSM
+   (<code>state</code> = PATROL/CHASE/RETURN), путь от A*, waypoints патруля.</p>
+<p>Класс <code>Spider(Enemy)</code> — наследник. Передаёт другие параметры
+   в <code>super().__init__</code>: меньше HP, меньше радиус видимости, быстрее.
+   <b>Никаких других отличий не нужно</b> — это пример полиморфизма.</p>
+
+<h3>src/entities/item.py — предметы</h3>
+<p>Базовый <code>Item</code> с методом <code>on_pickup(player)</code>.
+   Каждый подкласс делает своё:</p>
+<ul>
+  <li><code>Button</code> (пуговица) — <code>player.heal(1)</code> + очки</li>
+  <li><code>Needle</code> (иголка) — <code>player.add_attack(1)</code> + очки</li>
+  <li><code>Key</code> (ключ) — <code>player.has_key = True</code> + очки</li>
+</ul>
+<p>В <code>CollisionSystem</code> нет ни одного <code>isinstance</code> —
+   она просто зовёт <code>item.on_pickup(player)</code>.</p>
+
+<h3>src/systems/movement_system.py</h3>
+<p>Двигает игрока на одну клетку с проверкой <code>level.is_walkable</code>.
+   Шагает врагов к waypoint или по пути от A*.</p>
+
+<h3>src/systems/collision_system.py</h3>
+<p>Три метода:</p>
+<ul>
+  <li><b>check_player_items</b> — игрок встал на предмет? вызвать
+      <code>on_pickup</code></li>
+  <li><b>check_player_enemies</b> — игрок столкнулся с врагом? игрок теряет HP</li>
+  <li><b>player_attack</b> — Space: бьём всех в 4 соседних клетках</li>
+  <li><b>bump_attack</b> — шагнул на врага = удар вместо движения</li>
+</ul>
+
+<h3>src/systems/ai_system.py</h3>
+<p>Каждый кадр для каждого врага:</p>
+<ol>
+  <li>Обновить FSM (по расстоянию до игрока)</li>
+  <li>Если в Chase — раз в 0.25с вызвать A* и обновить путь</li>
+  <li>Если можно сделать шаг (по таймеру move_period) — шагнуть</li>
+</ol>
+
+<h3>src/systems/render_system.py</h3>
+<p>Рисует уровень, сущности, HP-полоски над ранеными врагами. В debug-режиме
+   (F3) добавляет хитбоксы, цвет состояния, путь A*, FPS.</p>
+
+<h3>src/algorithms/bsp_dungeon.py — СЛОЖНЫЙ АЛГОРИТМ</h3>
+<p>Ради него 15 баллов. Состоит из 4 функций:</p>
+<ol>
+  <li><b>split_node</b> — рекурсивно делит прямоугольник пополам</li>
+  <li><b>make_rooms</b> — в каждом листе дерева размещает комнату</li>
+  <li><b>carve_rooms</b> — переносит комнаты на сетку как пол</li>
+  <li><b>connect_tree</b> — снизу вверх соединяет комнаты L-коридорами</li>
+</ol>
+<p>Главная функция <code>generate(width, height, seed)</code> вызывает их по порядку
+   и возвращает grid, точку старта, выхода, список комнат.</p>
+
+<h3>src/algorithms/a_star.py</h3>
+<p>Поиск кратчайшего пути на тайловой сетке. Приоритетная очередь через
+   <code>heapq</code>, эвристика — манхэттенское расстояние. Возвращает список
+   тайлов от старта до цели.</p>
+
+<h3>src/world/level.py</h3>
+<p>Хранит <code>grid</code> — список списков <code>TileType</code>.
+   Метод <code>is_walkable(tx, ty)</code> — можно ли туда шагнуть.
+   <code>get_tile</code> с защитой: за границами возвращает стену
+   (никаких IndexError).</p>
+
+<h3>src/world/camera.py</h3>
+<p>Простая 2D-камера. <code>follow(tx, ty)</code> — поставить цель в центр
+   экрана. <code>_clamp</code> — не выезжать за края уровня. Все объекты
+   рисуются со смещением <code>x - camera.offset_x</code>.</p>
+
+<h3>src/ui/hud.py</h3>
+<p>Полоска HP (три квадратика), счётчик пуговиц, урон, ключ, уровень, очки,
+   время, временные сообщения. Всё одним методом <code>draw</code>.</p>
+
+<h3>src/persistence/save_manager.py</h3>
+<p>Три функции: <code>save_game(...)</code>, <code>load_game()</code>,
+   <code>delete_save()</code>. JSON в <code>saves/slot1.json</code>.</p>
+
+<h2 id="algorithms">6. Алгоритмы простыми словами</h2>
+
+<h3>BSP-генерация подземелья</h3>
+<p>Представь лист бумаги. Ты делишь его пополам — получилось два листка.
+   Каждый делишь пополам — получилось четыре. И так пока листки не станут
+   маленькими (≥ 7×7 тайлов).</p>
+<p>На каждом маленьком листке рисуешь комнату чуть меньше его размера. Потом
+   снизу вверх соединяешь соседние комнаты L-образными коридорами.</p>
+<p>Получается подземелье как в Binding of Isaac — комнаты разного размера,
+   соединённые туннелями.</p>
+<p><b>Сложность:</b> O(n) по числу клеток (каждая пишется максимум константное
+   число раз).</p>
+
+<h3>A* поиск пути</h3>
+<p>Это «улучшенный Дейкстра». Дейкстра рассылает волну во все стороны —
+   расточительно. A* добавляет подсказку <b>h</b> — оценку «сколько ещё до
+   цели» (манхэттенское расстояние). Берём вершины с наименьшим
+   <b>f = g + h</b>, где <b>g</b> — пройденный путь.</p>
+<p>В результате волна идёт прямо в сторону цели, обходя стены.</p>
+<p><b>Сложность:</b> O(E log V), где V — клетки, E — переходы.</p>
+
+<h3>FSM (конечный автомат) врага</h3>
+<p>У моли три состояния: <b>PATROL</b>, <b>CHASE</b>, <b>RETURN</b>.</p>
+<table>
+  <tr><th>Из</th><th>В</th><th>Когда</th></tr>
+  <tr><td>PATROL</td><td>CHASE</td><td>игрок ближе 5 клеток</td></tr>
+  <tr><td>CHASE</td><td>RETURN</td><td>игрок дальше 8 клеток</td></tr>
+  <tr><td>RETURN</td><td>PATROL</td><td>дошли до waypoint</td></tr>
+</table>
+<p><b>Гистерезис</b>: радиус обнаружения 5, радиус потери 8. Разные специально,
+   чтобы враг не дёргался между состояниями на границе.</p>
+
+<h2 id="solid">7. SOLID на твоих файлах</h2>
+<table>
+  <tr><th>Принцип</th><th>Где в коде</th></tr>
+  <tr>
+    <td><b>S</b> Single Responsibility<br>(каждый класс — одна задача)</td>
+    <td><code>MovementSystem</code> только двигает. <code>CollisionSystem</code>
+        только пересечения. <code>RenderSystem</code> только рисует.</td>
+  </tr>
+  <tr>
+    <td><b>O</b> Open/Closed<br>(открыт для расширения, закрыт для модификации)</td>
+    <td>Добавить нового врага = создать подкласс <code>Enemy</code>. Системы
+        не меняем. Пример: <code>Spider</code>.</td>
+  </tr>
+  <tr>
+    <td><b>L</b> Liskov<br>(подкласс работает везде где базовый)</td>
+    <td><code>AISystem</code> работает с <code>Enemy</code> и
+        <code>Spider</code> одинаково.</td>
+  </tr>
+  <tr>
+    <td><b>I</b> Interface Segregation<br>(узкие интерфейсы)</td>
+    <td><code>BaseScene</code> — три метода и всё.</td>
+  </tr>
+  <tr>
+    <td><b>D</b> Dependency Inversion<br>(зависим от абстракций)</td>
+    <td><code>AISystem(pathfinder)</code> — поисковик пути передаётся как
+        параметр, можно подменить.</td>
+  </tr>
+</table>
+
+<h2 id="cheat">8. Шпаргалка на защиту</h2>
+
+<table>
+  <tr>
+    <th>Вопрос</th>
+    <th>Ответ</th>
+  </tr>
+  <tr>
+    <td>Какая архитектура?</td>
+    <td>MVC-подобная. <code>entities</code> + <code>world</code> = Model,
+        <code>render_system</code> + <code>ui</code> = View,
+        <code>movement</code>/<code>ai</code>/<code>collision</code> = Controller.</td>
+  </tr>
+  <tr>
+    <td>Где инкапсуляция?</td>
+    <td><code>Player._hp</code> с подчёркиванием, доступ через
+        <code>@property hp</code> без сеттера. Менять HP можно только через
+        <code>take_damage</code> и <code>heal</code>.</td>
+  </tr>
+  <tr>
+    <td>Где полиморфизм?</td>
+    <td><code>Spider(Enemy)</code> — наследник, переопределяет только
+        <code>__init__</code>. <code>Button</code>/<code>Needle</code>/<code>Key</code>
+        переопределяют <code>on_pickup</code>. Системы работают с
+        базовыми классами без <code>isinstance</code>.</td>
+  </tr>
+  <tr>
+    <td>Сложный алгоритм?</td>
+    <td>BSP-генерация подземелья. 4 функции: split, make_rooms, carve_rooms,
+        connect_tree. Сложность O(n).</td>
+  </tr>
+  <tr>
+    <td>Почему A* а не Дейкстра?</td>
+    <td>Дейкстра ищет пути ко всем вершинам — расточительно, если нужна
+        одна цель. A* добавляет эвристику (манхэттен) и направляет волну
+        к цели. f = g + h.</td>
+  </tr>
+  <tr>
+    <td>Что такое seed?</td>
+    <td>Начальное число генератора случайных чисел. <code>random.Random(seed)</code>
+        с одним seed всегда даёт ту же последовательность. Поэтому сохранение
+        хранит только seed, а карту восстанавливаем при загрузке.</td>
+  </tr>
+  <tr>
+    <td>Что такое гистерезис в FSM?</td>
+    <td>Разные пороги для перехода туда и обратно. У моли: обнаружение на 5,
+        потеря на 8. Если бы было одинаково — враг дёргался бы на границе.</td>
+  </tr>
+  <tr>
+    <td>Зачем event_bus?</td>
+    <td>Слабая связь. <code>Player</code> не знает что HUD, звук и
+        <code>GameScene</code> его слушают. Pub/Sub паттерн.</td>
+  </tr>
+  <tr>
+    <td>Что в паузе?</td>
+    <td>Esc — продолжить, Q — в меню (сохранится), + / - — громкость музыки.</td>
+  </tr>
+  <tr>
+    <td>Магические числа?</td>
+    <td>Все в <code>core/constants.py</code>. Плюс <code>Enum</code> для типов
+        тайлов и состояний врагов.</td>
+  </tr>
+  <tr>
+    <td>Что показывает F3?</td>
+    <td>Хитбоксы (белая рамка), цвет состояния (зелёный/жёлтый/синий),
+        путь A* (красные точки), FPS.</td>
+  </tr>
+  <tr>
+    <td>Как двигаются враги?</td>
+    <td>Каждый кадр AI обновляет состояние. В Chase раз в 0.25с вызывается A*.
+        Сам шаг — раз в 0.35с (моль) или 0.22с (паук).</td>
+  </tr>
+  <tr>
+    <td>Как добавить нового врага?</td>
+    <td>Создаю <code>class Beetle(Enemy):</code> в <code>enemy.py</code>,
+        в <code>__init__</code> передаю свои параметры в <code>super()</code>.
+        Системы трогать не надо.</td>
+  </tr>
+</table>
+
+<h2 id="run">9. Как запускать и тестировать</h2>
+
+<h3>Запуск игры</h3>
+<pre><code>python -m venv venv
+venv\Scripts\activate
+pip install -r requirements.txt
+python main.py</code></pre>
+
+<h3>Запуск тестов</h3>
+<pre><code>pytest tests/ -v</code></pre>
+<p>Должно быть «27 passed» примерно за секунду.</p>
+
+<h3>Управление</h3>
+<table>
+  <tr><th>Клавиша</th><th>Действие</th></tr>
+  <tr><td>WASD / стрелки</td><td>двигать носок (можно удерживать)</td></tr>
+  <tr><td>Шаг на врага</td><td>bump attack — удар вместо движения</td></tr>
+  <tr><td>Space</td><td>удар во все 4 соседние клетки</td></tr>
+  <tr><td>Esc</td><td>пауза / снять с паузы</td></tr>
+  <tr><td>Q (в паузе)</td><td>выйти в меню (сохранится)</td></tr>
+  <tr><td>+ / - (в паузе)</td><td>громкость музыки</td></tr>
+  <tr><td>F3</td><td>включить/выключить debug</td></tr>
+</table>
+
+<div class="note">
+  Всё. Если что-то непонятно — открой файл и почитай. Файлы маленькие
+  (30-150 строк каждый), всё на русских комментариях.
+</div>
+
+</main>
+</div>
+</body>
+</html>

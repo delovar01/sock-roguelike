@@ -1,5 +1,5 @@
 from src.entities.entity import Entity
-from src.core.constants import BUTTON_COLOR, NEEDLE_COLOR
+from src.core.constants import BUTTON_COLOR, NEEDLE_COLOR, KEY_COLOR
 
 
 class Item(Entity):
@@ -22,6 +22,7 @@ class Button(Item):
     def on_pickup(self, player):
         player.heal(1)
         player.add_button()
+        player.add_score(10)
 
 
 class Needle(Item):
@@ -33,3 +34,15 @@ class Needle(Item):
     def on_pickup(self, player):
         player.add_attack(1)
         player.add_button()  # тоже считается за подобранный предмет
+        player.add_score(30)
+
+
+class Key(Item):
+    """Ключ. Без него выход закрыт."""
+
+    def __init__(self, tx, ty):
+        super().__init__(tx, ty, KEY_COLOR)
+
+    def on_pickup(self, player):
+        player.has_key = True
+        player.add_score(20)

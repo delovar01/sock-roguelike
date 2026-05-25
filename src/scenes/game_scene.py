@@ -4,12 +4,12 @@ import random
 from src.scenes.base_scene import BaseScene
 from src.core.constants import (
     SCREEN_WIDTH, SCREEN_HEIGHT, MAP_WIDTH, MAP_HEIGHT,
-    LEVELS_COUNT, SceneId
+    LEVELS_COUNT, SceneId, SCORE_KILL
 )
 from src.algorithms import bsp_dungeon, a_star
 from src.entities.player import Player
 from src.entities.enemy import Enemy, Spider
-from src.entities.item import Button, Needle
+from src.entities.item import Button, Needle, Key
 from src.world.level import Level
 from src.world.camera import Camera
 from src.systems.movement_system import MovementSystem
@@ -21,13 +21,17 @@ from src.persistence.save_manager import save_game, load_game
 
 
 def _spawn_enemies_and_items(rooms, centers, spawn, exit_pos, rng, level_num):
-    """Расставляем врагов и предметы в комнатах кроме стартовой/выходной."""
+    """Расставляем врагов и предметы в комнатах кроме стартовой и выходной.
+
+    На каждом уровне обязательно появляется один Key.
+    """
     enemies = []
     items = []
     if len(rooms) < 2:
         return enemies, items
 
     enemy_count = min(1 + level_num, len(rooms) - 1)
+    # минимум +1 предмет под ключ
     item_count = min(2 + level_num, len(rooms) - 1)
 
     skip_centers = {spawn, exit_pos}
@@ -45,10 +49,12 @@ def _spawn_enemies_and_items(rooms, centers, spawn, exit_pos, rng, level_num):
         else:
             enemies.append(Enemy(c[0], c[1], wps))
 
-    # предметы: иголок мало, по 1 шт начиная со 2-го уровня
+    # предметы: первый слот всегда ключ
     item_slots = available[enemy_count:enemy_count + item_count]
     for i, c in enumerate(item_slots):
-        if level_num >= 2 and i == 0:
+        if i == 0:
+            items.append(Key(c[0], c[1]))
+        elif level_num >= 2 and i == 1:
             items.append(Needle(c[0], c[1]))
         else:
             items.append(Button(c[0], c[1]))
@@ -89,6 +95,13 @@ class GameScene(BaseScene):
         game.event_bus.subscribe("level_completed", self._on_level_completed)
         self.paused = False
 
+        # сообщение игроку (например "нужен ключ") и таймер его показа
+        self.message = ""
+        self.message_timer = 0.0
+
+        # секундомер всей игры — копится за все уровни
+        self.elapsed_time = 0.0
+
         if load_save:
             data = load_game()
             if data is None:
@@ -96,10 +109,17 @@ class GameScene(BaseScene):
                 self._init_level(seed=12345, restore=None)
             else:
                 self.level_num = data["level_num"]
-                self._init_level(seed=data["seed"],
-                                 restore={"hp": data["hp"],
-                                          "buttons": data["buttons"],
-                                          "attack": data.get("attack", 1)})
+                self.elapsed_time = data.get("time", 0.0)
+                self._init_level(
+                    seed=data["seed"],
+                    restore={
+                        "hp": data["hp"],
+                        "buttons": data["buttons"],
+                        "attack": data.get("attack", 1),
+                        "score": data.get("score", 0),
+                        "kills": data.get("kills", 0),
+                    },
+                )
         else:
             self.level_num = level_num
             self._init_level(seed=_seed_for_level(level_num), restore=None)
@@ -112,8 +132,12 @@ class GameScene(BaseScene):
         self.level = Level(grid, spawn, exit_pos)
         self.player = Player(*spawn)
         if restore is not None:
-            self.player.set_state(restore["hp"], restore["buttons"],
-                                  restore.get("attack", 1))
+            self.player.set_state(
+                restore["hp"], restore["buttons"],
+                restore.get("attack", 1),
+                restore.get("score", 0),
+                restore.get("kills", 0),
+            )
         self.camera = Camera(SCREEN_WIDTH, SCREEN_HEIGHT,
                              self.level.width, self.level.height)
         self.camera.follow(self.player.tx, self.player.ty)
@@ -124,6 +148,10 @@ class GameScene(BaseScene):
         self._save_on_next_step = True
         self._game_over = False
 
+    def _show_message(self, text, seconds=1.5):
+        self.message = text
+        self.message_timer = seconds
+
     def _on_item_picked(self):
         self.game.resources.play_sound("pickup.wav")
 
@@ -132,6 +160,8 @@ class GameScene(BaseScene):
 
     def _on_enemy_killed(self):
         self.game.resources.play_sound("enemy_die.wav")
+        self.player.add_kill()
+        self.player.add_score(SCORE_KILL)
 
     def _on_player_died(self):
         self.game.resources.play_sound("death.wav")
@@ -141,7 +171,14 @@ class GameScene(BaseScene):
     def _on_level_completed(self):
         self.game.resources.play_sound("win.wav")
         if self.level_num >= LEVELS_COUNT:
-            self.game.change_scene(SceneId.WIN)
+            # итоговая статистика для WinScene
+            stats = {
+                "score": self.player.score,
+                "kills": self.player.kills,
+                "buttons": self.player.buttons,
+                "time": self.elapsed_time,
+            }
+            self.game.change_scene(SceneId.WIN, stats=stats)
         else:
             self.level_num += 1
             self._init_level(seed=_seed_for_level(self.level_num), restore=None)
@@ -158,7 +195,6 @@ class GameScene(BaseScene):
             self.render_sys.toggle_debug()
         elif event.key == pygame.K_SPACE:
             if not self.paused and not self._game_over:
-                # бьём в 4 соседние клетки
                 self.collisions.player_attack(self.player, self.enemies)
         elif self.paused and event.key == pygame.K_q:
             self.game.change_scene(SceneId.MENU)
@@ -170,6 +206,11 @@ class GameScene(BaseScene):
     def update(self, dt):
         if self._game_over or self.paused:
             return
+
+        # копим время уровня и таймер сообщения
+        self.elapsed_time += dt
+        if self.message_timer > 0:
+            self.message_timer -= dt
 
         # порядок шагов в кадре — как в методичке
         # Input -> Movement -> Collision -> AI -> Logic
@@ -198,13 +239,15 @@ class GameScene(BaseScene):
         self.player.update(dt, None)
 
     def _save(self):
-        # сохраняем через словарь — чтобы не путать порядок аргументов
         save_game(
             level_num=self.level_num,
             seed=self.seed,
             hp=self.player.hp,
             buttons=self.player.buttons,
             attack=self.player.attack_damage,
+            score=self.player.score,
+            kills=self.player.kills,
+            time=self.elapsed_time,
         )
 
     def _after_player_move(self):
@@ -214,7 +257,11 @@ class GameScene(BaseScene):
         self.collisions.check_player_enemies(self.player, self.enemies)
         # достигли выхода?
         if self.level.is_exit(self.player.tx, self.player.ty):
-            self.game.event_bus.emit("level_completed")
+            if self.player.has_key:
+                self.game.event_bus.emit("level_completed")
+            else:
+                # дверь закрыта — нужен ключ
+                self._show_message("Нужен ключ — найди его на уровне")
         self.camera.follow(self.player.tx, self.player.ty)
 
     def draw(self, surface):
@@ -223,7 +270,8 @@ class GameScene(BaseScene):
         self.render_sys.draw_enemy_hp(surface, self.enemies, self.camera)
         fps = self.game.clock.get_fps()
         self.render_sys.draw_debug(surface, self.enemies, self.camera, fps)
-        self.hud.draw(surface, self.player, self.level_num)
+        self.hud.draw(surface, self.player, self.level_num,
+                      self.elapsed_time, self.message, self.message_timer)
         if self.paused:
             self._draw_pause(surface)
 
