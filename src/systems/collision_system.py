@@ -48,3 +48,20 @@ class CollisionSystem:
         if hit:
             self.bus.emit("player_attacked")
         return hit
+
+    def bump_attack(self, player, dx, dy, enemies):
+        """Если в клетке куда хочет шагнуть игрок стоит враг — бьём его.
+        Возвращает True если был удар (тогда движение не происходит).
+        """
+        tx = player.tx + dx
+        ty = player.ty + dy
+        for enemy in enemies:
+            if not enemy.alive:
+                continue
+            if enemy.tx == tx and enemy.ty == ty:
+                enemy.take_damage(player.attack_damage)
+                if not enemy.alive:
+                    self.bus.emit("enemy_killed")
+                self.bus.emit("player_attacked")
+                return True
+        return False

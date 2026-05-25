@@ -178,10 +178,13 @@ class GameScene(BaseScene):
         cmd = self.game.input_manager.move_cmd
         if cmd is not None:
             dx, dy = cmd
-            # 2. Movement игрока + 3. Collision
-            moved = self.movement.try_move_player(self.player, dx, dy, self.level)
-            if moved:
-                self._after_player_move()
+            # если в той клетке стоит враг — бьём его (bump attack)
+            attacked = self.collisions.bump_attack(self.player, dx, dy, self.enemies)
+            if not attacked:
+                # 2. Movement игрока + 3. Collision
+                moved = self.movement.try_move_player(self.player, dx, dy, self.level)
+                if moved:
+                    self._after_player_move()
 
         if self._save_on_next_step:
             self._save()
@@ -217,6 +220,7 @@ class GameScene(BaseScene):
     def draw(self, surface):
         all_entities = list(self.items) + list(self.enemies) + [self.player]
         self.render_sys.draw(surface, self.level, all_entities, self.camera)
+        self.render_sys.draw_enemy_hp(surface, self.enemies, self.camera)
         fps = self.game.clock.get_fps()
         self.render_sys.draw_debug(surface, self.enemies, self.camera, fps)
         self.hud.draw(surface, self.player, self.level_num)

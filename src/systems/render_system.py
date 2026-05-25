@@ -27,6 +27,26 @@ class RenderSystem:
             if e.alive:
                 e.draw(surface, camera)
 
+    def draw_enemy_hp(self, surface, enemies, camera):
+        """Полоска HP над каждым раненым врагом."""
+        for enemy in enemies:
+            if not enemy.alive:
+                continue
+            # не показываем у полностью здоровых — чтобы не засорять экран
+            max_hp = getattr(enemy, "_max_hp", None)
+            if max_hp is None:
+                max_hp = enemy.hp  # запомнить как видели первый раз
+                enemy._max_hp = max_hp
+            if enemy.hp >= max_hp:
+                continue
+            ex = enemy.tx * TILE_SIZE - camera.offset_x
+            ey = enemy.ty * TILE_SIZE - camera.offset_y
+            # фон полоски
+            pygame.draw.rect(surface, (60, 0, 0), (ex + 4, ey - 6, TILE_SIZE - 8, 4))
+            # заполнение по HP
+            w = int((TILE_SIZE - 8) * enemy.hp / max_hp)
+            pygame.draw.rect(surface, (220, 60, 60), (ex + 4, ey - 6, w, 4))
+
     def draw_debug(self, surface, enemies, camera, fps):
         # вся отладка только если включена клавишей F3
         if not self.debug:

@@ -62,6 +62,19 @@ def test_player_attack_kills_enemy():
     assert e.alive is False
 
 
+def test_bump_attack_hits_instead_of_moving():
+    p = Player(5, 5)
+    # враг прямо справа
+    e = Enemy(6, 5, waypoints=[(6, 5)], hp=2)
+    bus = EventBus()
+    cs = CollisionSystem(bus)
+    hit = cs.bump_attack(p, dx=1, dy=0, enemies=[e])
+    assert hit is True
+    assert e.hp == 1
+    # игрок не сдвинулся
+    assert p.position == (5, 5)
+
+
 def test_aabb_basic():
     a = pygame.Rect(0, 0, 32, 32)
     b = pygame.Rect(20, 20, 32, 32)
