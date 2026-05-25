@@ -58,13 +58,15 @@ class Game:
     def run(self):
         while self._running:
             dt = self.clock.tick(FPS) / 1000.0
-            self.input_manager.reset_frame()
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     self._running = False
                     continue
-                self.input_manager.handle(event)
+                # одноразовые действия (Esc, пробел, F3, меню) — через handle_event
                 self._scene.handle_event(event)
+
+            # клавиши движения с авто-повтором — отдельно, каждый кадр
+            self.input_manager.update(dt)
 
             self._scene.update(dt)
             self.screen.fill(BG_COLOR)
