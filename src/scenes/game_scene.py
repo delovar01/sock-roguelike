@@ -4,12 +4,12 @@ import random
 from src.scenes.base_scene import BaseScene
 from src.core.constants import (
     SCREEN_WIDTH, SCREEN_HEIGHT, MAP_WIDTH, MAP_HEIGHT,
-    LEVELS_COUNT, SceneId, TileType, HUD_COLOR
+    LEVELS_COUNT, SceneId
 )
 from src.algorithms import bsp_dungeon, a_star
 from src.entities.player import Player
-from src.entities.enemy import Enemy
-from src.entities.item import Item
+from src.entities.enemy import Enemy, Spider
+from src.entities.item import Button, Needle
 from src.world.level import Level
 from src.world.camera import Camera
 from src.systems.movement_system import MovementSystem
@@ -21,13 +21,12 @@ from src.persistence.save_manager import save_game, load_game
 
 
 def _spawn_enemies_and_items(rooms, centers, spawn, exit_pos, rng, level_num):
-    """Расставляем врагов и предметы в комнатах кроме стартовой."""
+    """Расставляем врагов и предметы в комнатах кроме стартовой/выходной."""
     enemies = []
     items = []
     if len(rooms) < 2:
         return enemies, items
-    # на каждом уровне врагов и пуговиц чуть больше
-    # TODO: можно ещё типы врагов добавить, паука например
+
     enemy_count = min(1 + level_num, len(rooms) - 1)
     item_count = min(2 + level_num, len(rooms) - 1)
 
@@ -35,14 +34,24 @@ def _spawn_enemies_and_items(rooms, centers, spawn, exit_pos, rng, level_num):
     available = [c for c in centers if c not in skip_centers]
     rng.shuffle(available)
 
-    for c in available[:enemy_count]:
-        # делаем простой waypoint-маршрут — две точки около центра
+    # враги: на 1-м уровне только моли, со 2-го появляются пауки
+    enemy_slots = available[:enemy_count]
+    for i, c in enumerate(enemy_slots):
         room = _room_for_center(rooms, c)
         wps = _make_waypoints(room)
-        enemies.append(Enemy(c[0], c[1], wps))
+        # каждый третий враг (начиная с уровня 2) — паук
+        if level_num >= 2 and i % 3 == 1:
+            enemies.append(Spider(c[0], c[1], wps))
+        else:
+            enemies.append(Enemy(c[0], c[1], wps))
 
-    for c in available[enemy_count:enemy_count + item_count]:
-        items.append(Item(c[0], c[1]))
+    # предметы: иголок мало, по 1 шт начиная со 2-го уровня
+    item_slots = available[enemy_count:enemy_count + item_count]
+    for i, c in enumerate(item_slots):
+        if level_num >= 2 and i == 0:
+            items.append(Needle(c[0], c[1]))
+        else:
+            items.append(Button(c[0], c[1]))
 
     return enemies, items
 
@@ -74,6 +83,8 @@ class GameScene(BaseScene):
 
         # подписки на события
         game.event_bus.subscribe("item_picked", self._on_item_picked)
+        game.event_bus.subscribe("player_attacked", self._on_player_attacked)
+        game.event_bus.subscribe("enemy_killed", self._on_enemy_killed)
         game.event_bus.subscribe("player_died", self._on_player_died)
         game.event_bus.subscribe("level_completed", self._on_level_completed)
         self.paused = False
@@ -81,26 +92,28 @@ class GameScene(BaseScene):
         if load_save:
             data = load_game()
             if data is None:
-                # сохранения нет — стартуем новую
                 self.level_num = 1
                 self._init_level(seed=12345, restore=None)
             else:
                 self.level_num = data["level_num"]
                 self._init_level(seed=data["seed"],
                                  restore={"hp": data["hp"],
-                                          "buttons": data["buttons"]})
+                                          "buttons": data["buttons"],
+                                          "attack": data.get("attack", 1)})
         else:
             self.level_num = level_num
             self._init_level(seed=_seed_for_level(level_num), restore=None)
 
     def _init_level(self, seed, restore):
-        rng = random.Random(seed + 7)  # отдельный rng для размещения
-        result = bsp_dungeon.generate_with_rooms(MAP_WIDTH, MAP_HEIGHT, seed)
-        grid, spawn, exit_pos, rooms, centers = result
+        rng = random.Random(seed + 7)
+        grid, spawn, exit_pos, rooms, centers = bsp_dungeon.generate(
+            MAP_WIDTH, MAP_HEIGHT, seed
+        )
         self.level = Level(grid, spawn, exit_pos)
         self.player = Player(*spawn)
         if restore is not None:
-            self.player.set_state(restore["hp"], restore["buttons"])
+            self.player.set_state(restore["hp"], restore["buttons"],
+                                  restore.get("attack", 1))
         self.camera = Camera(SCREEN_WIDTH, SCREEN_HEIGHT,
                              self.level.width, self.level.height)
         self.camera.follow(self.player.tx, self.player.ty)
@@ -108,11 +121,17 @@ class GameScene(BaseScene):
             rooms, centers, spawn, exit_pos, rng, self.level_num
         )
         self.seed = seed
-        self._save_on_next_step = True  # авто-сейв на старте уровня
+        self._save_on_next_step = True
         self._game_over = False
 
     def _on_item_picked(self):
         self.game.resources.play_sound("pickup.wav")
+
+    def _on_player_attacked(self):
+        self.game.resources.play_sound("hit.wav")
+
+    def _on_enemy_killed(self):
+        self.game.resources.play_sound("enemy_die.wav")
 
     def _on_player_died(self):
         self.game.resources.play_sound("death.wav")
@@ -134,12 +153,14 @@ class GameScene(BaseScene):
             # на паузу или с паузы
             self.paused = not self.paused
             if self.paused:
-                # сохраняем сразу когда зашли в паузу
-                save_game(self.level_num, self.seed, self.player.hp, self.player.buttons)
+                self._save()
         elif event.key == pygame.K_F3:
             self.render_sys.toggle_debug()
+        elif event.key == pygame.K_SPACE:
+            if not self.paused and not self._game_over:
+                # бьём в 4 соседние клетки
+                self.collisions.player_attack(self.player, self.enemies)
         elif self.paused and event.key == pygame.K_q:
-            # из паузы можно выйти в меню
             self.game.change_scene(SceneId.MENU)
         elif self.paused and event.key == pygame.K_MINUS:
             self.game.resources.change_music_volume(-0.1)
@@ -153,26 +174,35 @@ class GameScene(BaseScene):
         # порядок шагов в кадре — как в методичке
         # Input -> Movement -> Collision -> AI -> Logic
 
-        # 1. Input — что нажал игрок в этом кадре
+        # 1. Input — что нажал игрок
         cmd = self.game.input_manager.move_cmd
         if cmd is not None:
             dx, dy = cmd
-            # 2. Movement игрока + 3. Collision сразу же
+            # 2. Movement игрока + 3. Collision
             moved = self.movement.try_move_player(self.player, dx, dy, self.level)
             if moved:
                 self._after_player_move()
 
-        # авто-сейв на старте уровня
         if self._save_on_next_step:
-            save_game(self.level_num, self.seed, self.player.hp, self.player.buttons)
+            self._save()
             self._save_on_next_step = False
 
-        # 4. AI — обновление врагов (вкл. их Movement)
+        # 4. AI и движение врагов
         self.ai.update(self.enemies, self.player, self.level, dt, self.movement)
         # 5. Collision после хода врагов
         self.collisions.check_player_enemies(self.player, self.enemies)
-        # 6. Logic — таймер неуязвимости игрока
+        # 6. Logic — таймер неуязвимости
         self.player.update(dt, None)
+
+    def _save(self):
+        # сохраняем через словарь — чтобы не путать порядок аргументов
+        save_game(
+            level_num=self.level_num,
+            seed=self.seed,
+            hp=self.player.hp,
+            buttons=self.player.buttons,
+            attack=self.player.attack_damage,
+        )
 
     def _after_player_move(self):
         # подбор предметов
@@ -194,7 +224,6 @@ class GameScene(BaseScene):
             self._draw_pause(surface)
 
     def _draw_pause(self, surface):
-        # затемнение
         overlay = pygame.Surface((surface.get_width(), surface.get_height()))
         overlay.set_alpha(170)
         overlay.fill((0, 0, 0))
@@ -204,15 +233,17 @@ class GameScene(BaseScene):
         cx = surface.get_width() // 2
         cy = surface.get_height() // 2
         title = font_big.render("Пауза", True, (255, 255, 255))
-        surface.blit(title, title.get_rect(center=(cx, cy - 80)))
+        surface.blit(title, title.get_rect(center=(cx, cy - 100)))
         lines = [
             "Esc — продолжить",
             "Q — в главное меню (сохранится)",
             "+ / - — громкость музыки",
+            "",
+            "В игре: Space — удар, F3 — отладка",
         ]
         for i, ln in enumerate(lines):
             s = font.render(ln, True, (220, 220, 220))
-            surface.blit(s, s.get_rect(center=(cx, cy - 10 + i * 28)))
+            surface.blit(s, s.get_rect(center=(cx, cy - 30 + i * 28)))
 
 
 def _seed_for_level(level_num):

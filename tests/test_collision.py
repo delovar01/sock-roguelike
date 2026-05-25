@@ -1,7 +1,7 @@
 import pygame
 
 from src.entities.player import Player
-from src.entities.item import Item
+from src.entities.item import Button, Needle
 from src.entities.enemy import Enemy
 from src.systems.movement_system import MovementSystem
 from src.systems.collision_system import CollisionSystem
@@ -27,16 +27,39 @@ def test_player_blocked_by_wall():
     assert p.position == (0, 0)
 
 
-def test_player_picks_up_item_on_overlap():
+def test_button_pickup_heals_and_counts():
     p = Player(2, 3)
-    item = Item(2, 3)
+    btn = Button(2, 3)
     bus = EventBus()
     cs = CollisionSystem(bus)
-    # игрок здоров — не вылечится, но кнопка должна засчитаться
+    # сначала ранится, потом подбирает пуговицу
     p.take_damage(1)
-    cs.check_player_items(p, [item])
-    assert item.alive is False
+    start_hp = p.hp
+    cs.check_player_items(p, [btn])
+    assert btn.alive is False
     assert p.buttons == 1
+    assert p.hp == start_hp + 1
+
+
+def test_needle_pickup_increases_damage():
+    p = Player(0, 0)
+    n = Needle(0, 0)
+    bus = EventBus()
+    cs = CollisionSystem(bus)
+    start = p.attack_damage
+    cs.check_player_items(p, [n])
+    assert n.alive is False
+    assert p.attack_damage == start + 1
+
+
+def test_player_attack_kills_enemy():
+    p = Player(5, 5)
+    e = Enemy(6, 5, waypoints=[(6, 5)], hp=1)
+    bus = EventBus()
+    cs = CollisionSystem(bus)
+    hit = cs.player_attack(p, [e])
+    assert hit is True
+    assert e.alive is False
 
 
 def test_aabb_basic():

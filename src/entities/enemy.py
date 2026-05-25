@@ -2,25 +2,38 @@ import math  # вроде не использую, оставил пока
 
 from src.entities.entity import Entity
 from src.core.constants import (
-    ENEMY_COLOR, EnemyState, DETECT_RADIUS, LOSE_RADIUS
+    ENEMY_COLOR, SPIDER_COLOR, EnemyState,
+    DETECT_RADIUS, LOSE_RADIUS,
+    SPIDER_DETECT_RADIUS, SPIDER_LOSE_RADIUS,
+    MOTH_HP, SPIDER_HP
 )
 
 
 class Enemy(Entity):
-    """Враг-моль. Поведение через автомат Patrol -> Chase -> Return."""
+    """Враг. Поведение через автомат Patrol -> Chase -> Return."""
 
-    def __init__(self, tx, ty, waypoints):
-        super().__init__(tx, ty, ENEMY_COLOR)
+    def __init__(self, tx, ty, waypoints, hp=MOTH_HP,
+                 detect_radius=DETECT_RADIUS, lose_radius=LOSE_RADIUS,
+                 move_period=0.35, color=ENEMY_COLOR):
+        super().__init__(tx, ty, color)
+        self.hp = hp
+        self.detect_radius = detect_radius
+        self.lose_radius = lose_radius
         self.waypoints = list(waypoints) if waypoints else [(tx, ty)]
         self.wp_index = 0
         self.state = EnemyState.PATROL
         self.path = []
         self.move_cooldown = 0.0
-        self.move_period = 0.35
+        self.move_period = move_period
         self.repath_cooldown = 0.0
 
     def set_path(self, path):
         self.path = list(path)
+
+    def take_damage(self, dmg):
+        self.hp -= dmg
+        if self.hp <= 0:
+            self.alive = False
 
     def should_repath(self, dt):
         self.repath_cooldown -= dt
@@ -36,10 +49,10 @@ class Enemy(Entity):
     def update_fsm(self, player_tx, player_ty):
         dist = self.distance_to(player_tx, player_ty)
         if self.state == EnemyState.PATROL:
-            if dist <= DETECT_RADIUS:
+            if dist <= self.detect_radius:
                 self.state = EnemyState.CHASE
         elif self.state == EnemyState.CHASE:
-            if dist > LOSE_RADIUS:
+            if dist > self.lose_radius:
                 self.state = EnemyState.RETURN
         elif self.state == EnemyState.RETURN:
             wp = self.waypoints[self.wp_index]
@@ -58,3 +71,17 @@ class Enemy(Entity):
             self.move_cooldown = self.move_period
             return True
         return False
+
+
+class Spider(Enemy):
+    """Паук. Быстрее моли, ближе видит, но хрупкий (1 HP)."""
+
+    def __init__(self, tx, ty, waypoints):
+        super().__init__(
+            tx, ty, waypoints,
+            hp=SPIDER_HP,
+            detect_radius=SPIDER_DETECT_RADIUS,
+            lose_radius=SPIDER_LOSE_RADIUS,
+            move_period=0.22,
+            color=SPIDER_COLOR,
+        )

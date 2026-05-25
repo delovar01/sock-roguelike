@@ -21,9 +21,11 @@ class Hud:
             pygame.draw.rect(surface, color, (x, y, 24, 24))
             pygame.draw.rect(surface, HUD_COLOR, (x, y, 24, 24), 1)
 
-        # пуговицы
+        # пуговицы и урон
         text = self.font.render(f"Пуговицы: {player.buttons}", True, HUD_COLOR)
         surface.blit(text, (12, 48))
+        dmg = self.font.render(f"Урон: {player.attack_damage}", True, HUD_COLOR)
+        surface.blit(dmg, (12, 74))
 
         # уровень
         lvl_text = self.font.render(f"Уровень {level_num}", True, HUD_COLOR)

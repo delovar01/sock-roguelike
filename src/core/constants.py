@@ -17,15 +17,24 @@ PLAYER_SPEED = 4
 PLAYER_MAX_HP = 3
 PLAYER_COLOR = (240, 240, 240)
 
-# враг
+# враги
 ENEMY_SPEED = 2
-ENEMY_COLOR = (130, 80, 50)
-DETECT_RADIUS = 5
-LOSE_RADIUS = 8
-AI_REPATH_FRAMES = 15
+ENEMY_COLOR = (130, 80, 50)        # моль
+SPIDER_COLOR = (200, 90, 200)      # паук
+DETECT_RADIUS = 5                   # клеток
+LOSE_RADIUS = 8                     # для гистерезиса
+SPIDER_DETECT_RADIUS = 3            # паук ближе видит
+SPIDER_LOSE_RADIUS = 6
+MOTH_HP = 2
+SPIDER_HP = 1
 
 # предметы
-ITEM_COLOR = (230, 190, 60)
+BUTTON_COLOR = (230, 190, 60)      # пуговица: +1 HP
+NEEDLE_COLOR = (200, 200, 230)     # иголка: +1 урона
+ITEM_COLOR = BUTTON_COLOR           # для обратной совместимости
+
+# атака игрока
+PLAYER_BASE_DAMAGE = 1
 
 # уровень и BSP
 LEVELS_COUNT = 3

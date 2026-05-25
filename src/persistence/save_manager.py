@@ -1,20 +1,18 @@
-"""Простое сохранение/загрузка в JSON.
-
-Файл лежит в saves/slot1.json. Один слот — на 1 курсе больше не надо.
-"""
+"""Простое сохранение/загрузка в JSON. Один слот."""
 
 import json
 
 from src.core.constants import SAVE_FILE, SAVE_DIR
 
 
-def save_game(level_num, seed, hp, buttons):
+def save_game(level_num, seed, hp, buttons, attack=1):
     SAVE_DIR.mkdir(parents=True, exist_ok=True)
     data = {
         "level_num": level_num,
         "seed": seed,
         "hp": hp,
         "buttons": buttons,
+        "attack": attack,
     }
     try:
         SAVE_FILE.write_text(json.dumps(data, ensure_ascii=False, indent=2),
