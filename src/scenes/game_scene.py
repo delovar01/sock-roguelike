@@ -110,12 +110,12 @@ class GameScene(BaseScene):
             data = load_game()
             if data is None:
                 self.level_num = 1
-                self._init_level(seed=12345, restore=None)
+                self._init_level(seed=None, restore=None)
             else:
                 self.level_num = data["level_num"]
                 self.elapsed_time = data.get("time", 0.0)
                 self._init_level(
-                    seed=data["seed"],
+                    seed=data["seed"],   # тот же мир что был при сохранении
                     restore={
                         "hp": data["hp"],
                         "buttons": data["buttons"],
@@ -126,9 +126,12 @@ class GameScene(BaseScene):
                 )
         else:
             self.level_num = level_num
-            self._init_level(seed=_seed_for_level(level_num), restore=None)
+            self._init_level(seed=None, restore=None)
 
     def _init_level(self, seed, restore):
+        # seed=None — новая игра, генерируем случайный мир
+        if seed is None:
+            seed = random.randint(0, 10 ** 9)
         rng = random.Random(seed + 7)
         grid, spawn, exit_pos, rooms, centers = bsp_dungeon.generate(
             MAP_WIDTH, MAP_HEIGHT, seed
@@ -185,7 +188,8 @@ class GameScene(BaseScene):
             self.game.change_scene(SceneId.WIN, stats=stats)
         else:
             self.level_num += 1
-            self._init_level(seed=_seed_for_level(self.level_num), restore=None)
+            # новый уровень — новый случайный мир
+            self._init_level(seed=None, restore=None)
 
     def handle_event(self, event):
         if event.type != pygame.KEYDOWN:
@@ -304,6 +308,3 @@ class GameScene(BaseScene):
             surface.blit(s, s.get_rect(center=(cx, cy - 30 + i * 28)))
 
 
-def _seed_for_level(level_num):
-    base = 1000
-    return base + level_num * 17
